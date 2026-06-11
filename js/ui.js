@@ -6,6 +6,7 @@ import {
   MAJOR_MOONS, CONSTELLATIONS, BRIGHT_STARS, DSOS,
 } from './data.js';
 import { daysSinceJ2000, moonPhase } from './ephemeris.js';
+import { ARTICLES } from './articles.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -35,6 +36,8 @@ export class UI {
     this.speaking = false;
     $('holo-close').addEventListener('click', () => this.hideInfo());
     $('holo-handle').addEventListener('click', () => $('holo').classList.toggle('collapsed'));
+    $('article-toggle').addEventListener('click', () =>
+      $('holo-article').classList.toggle('open'));
     $('speak-btn').addEventListener('click', () => this.toggleSpeak());
     $('focus-btn').addEventListener('click', () => {
       if (this.currentId && this.onFocus) this.onFocus(this.currentId);
@@ -137,6 +140,19 @@ export class UI {
       extra.classList.remove('hidden');
     } else {
       extra.classList.add('hidden');
+    }
+
+    // บทอ่านเจาะลึก (กางอัตโนมัติในโหมดนักเรียน/ผู้เชี่ยวชาญ)
+    const article = ARTICLES[id];
+    const artBox = $('holo-article');
+    if (article) {
+      $('article-body').innerHTML = article
+        .map(([h, p]) => `<h4>${h}</h4><p>${p}</p>`)
+        .join('');
+      artBox.classList.remove('hidden');
+      artBox.classList.toggle('open', this.level !== 'kid');
+    } else {
+      artBox.classList.add('hidden');
     }
 
     // ปุ่มบินไปดู เฉพาะวัตถุในระบบสุริยะ และเฉพาะตอนอยู่โหมดระบบสุริยะ

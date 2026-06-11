@@ -437,6 +437,29 @@ button { font-family: var(--font-display); cursor: pointer; }
 .holo-fact h4 { font-family: var(--font-display); font-size: 12.5px; color: var(--amber); margin-bottom: 5px; letter-spacing: .05em; }
 .holo-fact p { font-size: 13.5px; line-height: 1.65; }
 
+/* บทอ่านเจาะลึก */
+.holo-article { margin-top: 12px; }
+.holo-article.hidden { display: none; }
+#article-toggle {
+  width: 100%; text-align: left;
+  background: rgba(111, 227, 255, .07);
+  border: 1px solid var(--holo-faint); border-radius: 6px;
+  color: var(--holo); font-size: 13.5px; font-weight: 500;
+  padding: 10px 13px; letter-spacing: .03em;
+  transition: background .2s;
+}
+#article-toggle:hover { background: rgba(111, 227, 255, .14); }
+#article-toggle span { float: right; transition: transform .25s; }
+.holo-article.open #article-toggle span { transform: rotate(180deg); }
+#article-body { display: none; padding: 4px 2px 0; }
+.holo-article.open #article-body { display: block; animation: stat-in .35s ease; }
+#article-body h4 {
+  font-family: var(--font-display); font-size: 13.5px; color: var(--amber);
+  margin: 14px 0 5px; letter-spacing: .04em;
+  border-bottom: 1px dashed rgba(255, 180, 84, .25); padding-bottom: 4px;
+}
+#article-body p { font-size: 13.5px; line-height: 1.75; color: var(--ink); user-select: text; }
+
 .holo-extra { margin-top: 12px; background: rgba(180, 140, 255, .07); border-left: 2px solid #b48cff; border-radius: 0 6px 6px 0; padding: 11px 13px; }
 .holo-extra.hidden { display: none; }
 .holo-extra h4 { font-family: var(--font-display); font-size: 12.5px; color: #c9a8ff; margin-bottom: 5px; }
