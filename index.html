@@ -179,8 +179,13 @@
 
 <!-- ── แผงควบคุมสาธิต ─────────────────────────────── -->
 <div id="demo-panel" class="hidden">
-  <h3 id="demo-title">—</h3>
-  <p id="demo-caption">—</p>
+  <div class="demo-head">
+    <h3 id="demo-title">—</h3>
+    <button id="demo-collapse" title="ย่อ/ขยายคำอธิบาย">▾</button>
+  </div>
+  <div id="demo-body">
+    <p id="demo-caption">—</p>
+  </div>
   <span id="demo-slider-label" class="demo-slider-label">—</span>
   <input type="range" id="demo-slider" min="0" max="100" step="1" value="0">
   <button id="demo-exit">✕ ออกจากการสาธิต</button>

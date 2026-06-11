@@ -406,6 +406,8 @@ function setupControls() {
       enterDemo(b.dataset.demo);
     }));
   $('demo-exit').addEventListener('click', () => exitDemo());
+  $('demo-collapse').addEventListener('click', () =>
+    $('demo-panel').classList.toggle('collapsed'));
 
   // ท้องฟ้าจำลอง: จังหวัด วันที่ เวลา
   const prov = $('province');

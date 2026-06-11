@@ -192,7 +192,8 @@ export class Demos {
       ['neptune', 'ดาวเนปจูน', 3.88],
     ];
     let x = 0;
-    defs.forEach(([key, name, r], i) => {
+    let i2 = 0; // ตัวนับเฉพาะดาวเคราะห์ (ใช้สลับความสูงป้าย)
+    defs.forEach(([key, name, r]) => {
       const mesh = new THREE.Mesh(
         new THREE.SphereGeometry(r, 64, 32),
         new THREE.MeshBasicMaterial({ map: this.tex[key] }),
@@ -201,15 +202,18 @@ export class Demos {
         // ดวงอาทิตย์ใหญ่เกินจอ — วางให้เห็นแค่ขอบโค้งด้านซ้าย
         mesh.position.set(-112, 0, 0);
         const l = label('ดวงอาทิตย์ — ใหญ่กว่าโลก 109 เท่า ☀', 'obj-label sun-label');
-        l.position.set(106, 18, 0);
+        l.position.set(106, 20, 0);
         mesh.add(l);
       } else {
-        x += r + 2.2;
+        // เว้นช่องเผื่อวงแหวนดาวเสาร์ (กว้าง 2.2 เท่ารัศมี) ไม่ให้ทับเพื่อน
+        const extra = key === 'saturn' ? r * 1.35 : 0;
+        x += r + 5 + extra;
         mesh.position.set(x, 0, 0);
-        x += r;
+        x += r + extra;
         const l = label(name);
-        l.position.y = r + 1.6;
+        l.position.y = r + 2 + (i2 % 2 ? 3.2 : 0); // สลับสูง-ต่ำ กันป้ายชนกัน
         mesh.add(l);
+        i2++;
         if (key === 'saturn') {
           const ring = new THREE.Mesh(
             new THREE.RingGeometry(r * 1.25, r * 2.2, 96),
@@ -233,7 +237,7 @@ export class Demos {
         title: '🌙 เฟสของดวงจันทร์ (ข้างขึ้น-ข้างแรม)',
         slider: { min: 0, max: 29.5, step: 0.1, value: 0, label: 'เลื่อนวันในเดือนจันทรคติ' },
         camera: [[0, 34, 8], [0, 0, 0]],
-        inset: { label: '🔭 ดวงจันทร์ที่คนบนโลกเห็นจริง', view: 'moon-from-earth', fov: 10 },
+        inset: { label: '👁 ดวงจันทร์ขนาดที่ตาเห็นจริง', view: 'moon-from-earth', fov: 17 },
         setup: () => {
           this.orbital.visible = true;
           this.compare.visible = false;
@@ -302,7 +306,7 @@ export class Demos {
         title: '🌑 สุริยุปราคา — ดวงจันทร์บังดวงอาทิตย์',
         slider: { min: -16, max: 16, step: 0.2, value: -16, label: 'เลื่อนดวงจันทร์ผ่านแนวดวงอาทิตย์' },
         camera: [[6, 9, 24], [0, 0, 0]],
-        inset: { label: '🔭 ดวงอาทิตย์ที่คนบนโลกเห็น — ค่อย ๆ ถูกบัง!', view: 'sun-from-earth', fov: 14 },
+        inset: { label: '👁 ดวงอาทิตย์ที่ตาเห็น — ถูกบังพอดีเป๊ะ!', view: 'sun-from-earth', fov: 15 },
         setup: () => {
           this.orbital.visible = true;
           this.compare.visible = false;
@@ -337,7 +341,7 @@ export class Demos {
         title: '🔴 จันทรุปราคา — ดวงจันทร์เข้าไปในเงาโลก (ราหูอมจันทร์)',
         slider: { min: 164, max: 196, step: 0.2, value: 164, label: 'เลื่อนดวงจันทร์ผ่านเงาโลก' },
         camera: [[14, 10, 26], [6, 0, 0]],
-        inset: { label: '🔭 ดวงจันทร์ที่คนบนโลกเห็น — กลายเป็นสีแดง!', view: 'moon-from-earth', fov: 16 },
+        inset: { label: '👁 ดวงจันทร์ที่ตาเห็น — กลายเป็นสีแดง!', view: 'moon-from-earth', fov: 17 },
         setup: () => {
           this.orbital.visible = true;
           this.compare.visible = false;
@@ -370,7 +374,7 @@ export class Demos {
       compare: {
         title: '⚖️ เปรียบเทียบขนาดจริงของดาว (โลก = 1)',
         slider: null,
-        camera: [[26, 6, 86], [26, 0, 0]],
+        camera: [[44, 8, 118], [44, 0, 0]],
         setup: () => {
           this.orbital.visible = false;
           this.compare.visible = true;
@@ -454,18 +458,16 @@ export class Demos {
     if (w > 780) { x = w - s - 16; y = 16; }
     else { x = Math.floor(w / 2 - s / 2); y = ($('demo-panel').offsetHeight || 170) + 30; }
 
-    // จัดกล้องตามชนิดมุมมอง
+    // จัดกล้องตามชนิดมุมมอง — กล้องอยู่ที่จุดศูนย์กลางโลก ทำให้
+    // "ขนาดปรากฏ" ของดวงอาทิตย์กับดวงจันทร์เท่ากันตามจริง 100%
+    // (ฉากนี้ออกแบบสัดส่วน 0.85/9 ≈ 6/65 ตรงกับท้องฟ้าจริง)
     const cam = this.insetCamera;
     const earth = this.demoEarthGroup.position;
     if (inset.view === 'moon-from-earth') {
-      // ยืนบนโลก มองดวงจันทร์
-      const dir = this.demoMoon.position.clone().sub(earth).normalize();
-      cam.position.copy(earth).addScaledVector(dir, 3.3);
+      cam.position.copy(earth);
       cam.lookAt(this.demoMoon.position);
     } else if (inset.view === 'sun-from-earth') {
-      // ยืนบนโลก มองดวงอาทิตย์ (เห็นดวงจันทร์เคลื่อนผ่านหน้า)
-      const dir = this.demoSun.position.clone().sub(earth).normalize();
-      cam.position.copy(earth).addScaledVector(dir, 3.3);
+      cam.position.copy(earth);
       cam.lookAt(this.demoSun.position);
     } else { // earth-from-sun: มองโลกจากดวงอาทิตย์ เห็นขั้วที่รับแสง
       const dir = earth.clone().sub(this.demoSun.position).normalize();
