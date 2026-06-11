@@ -39,26 +39,14 @@ function radecToHorizon(raH, decDeg, lstH, latDeg, out) {
   return out.set(east, up, -north);
 }
 
-const ART_EMOJI = {
-  hunter: '🏹', bear: '🐻', scorpion: '🦂', lion: '🦁', twins: '🧑‍🤝‍🧑',
-  bull: '🐂', archer: '🏹', queen: '👑', cross: '✦', lyre: '🪕', swan: '🦢',
-  ram: '🐏', crab: '🦀', maiden: '👧', scales: '⚖️', seagoat: '🐐',
-  waterbearer: '🏺', fish: '🐟',
-};
-
-function emojiSprite(emoji) {
-  const c = document.createElement('canvas');
-  c.width = c.height = 256;
-  const ctx = c.getContext('2d');
-  ctx.font = '190px serif';
-  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.globalAlpha = 0.9;
-  ctx.filter = 'sepia(1) hue-rotate(160deg) saturate(2.4) brightness(1.15)';
-  ctx.fillText(emoji, 128, 140);
-  const tex = new THREE.CanvasTexture(c);
+/* ภาพวาดตำนานจริงจาก Stellarium (วาดโดย Johan Meuris, Free Art License)
+   พื้นดำ ออกแบบมาซ้อนบนท้องฟ้าด้วย additive blending โดยเฉพาะ */
+const artLoader = new THREE.TextureLoader();
+function artSprite(constellationId) {
+  const tex = artLoader.load(`img/const/${constellationId}.png`);
   tex.colorSpace = THREE.SRGBColorSpace;
   return new THREE.SpriteMaterial({
-    map: tex, transparent: true, opacity: 0.34,
+    map: tex, transparent: true, opacity: 0.55,
     blending: THREE.AdditiveBlending, depthWrite: false,
   });
 }
@@ -224,8 +212,8 @@ export class Planetarium {
       const label = new CSS2DObject(div);
       this.labels.push(label);
 
-      // ภาพตำนานโปร่งใส
-      const art = new THREE.Sprite(emojiSprite(ART_EMOJI[c.art] || '✶'));
+      // ภาพวาดตำนานจริง (โปร่งแสง)
+      const art = new THREE.Sprite(artSprite(c.id));
       art.visible = false;
 
       // ป้ายชื่อดาวสมาชิก (โชว์เมื่อเลือก)
@@ -393,15 +381,24 @@ export class Planetarium {
     groundCap.position.y = -2;
     this.group.add(groundCap);
 
-    // แสงเรืองขอบฟ้า
+    // แสงเรืองขอบฟ้า — ไล่เฉดนุ่มจากล่างขึ้นบน (ไม่เป็นแถบขอบแข็ง)
+    const gc = document.createElement('canvas');
+    gc.width = 4; gc.height = 128;
+    const gctx = gc.getContext('2d');
+    const grad = gctx.createLinearGradient(0, 128, 0, 0);
+    grad.addColorStop(0, 'rgba(38, 72, 105, 0.5)');
+    grad.addColorStop(0.4, 'rgba(28, 55, 84, 0.22)');
+    grad.addColorStop(1, 'rgba(20, 40, 64, 0)');
+    gctx.fillStyle = grad;
+    gctx.fillRect(0, 0, 4, 128);
     const horizonGlow = new THREE.Mesh(
-      new THREE.CylinderGeometry(R * 0.998, R * 0.998, R * 0.12, 96, 1, true),
+      new THREE.CylinderGeometry(R * 0.998, R * 0.998, R * 0.16, 96, 1, true),
       new THREE.MeshBasicMaterial({
-        color: 0x1a3a52, transparent: true, opacity: 0.5,
+        map: new THREE.CanvasTexture(gc), transparent: true,
         side: THREE.BackSide, blending: THREE.AdditiveBlending, depthWrite: false,
       }),
     );
-    horizonGlow.position.y = R * 0.03;
+    horizonGlow.position.y = R * 0.08;
     this.group.add(horizonGlow);
 
     // วงแหวนขอบฟ้า
@@ -534,8 +531,10 @@ export class Planetarium {
       centroid.divideScalar(con.sprites.length);
       con.label.position.copy(centroid).multiplyScalar(1.04);
       con.art.position.copy(centroid).multiplyScalar(0.92);
-      const artScale = con.data.id === 'crux' ? 40 : 95;
-      con.art.scale.setScalar(artScale);
+      // ขนาดภาพตำนานพอดีกับขนาดจริงของหมู่ดาว
+      let span = 0;
+      con.sprites.forEach((s) => { span = Math.max(span, s.position.distanceTo(centroid)); });
+      con.art.scale.setScalar(Math.max(34, span * 2.6));
       // ซ่อนป้ายถ้าทั้งกลุ่มอยู่ใต้ขอบฟ้า
       con.label.visible = this.group.visible && centroid.y > -R * 0.05;
       const lp = con.lines.geometry.attributes.position;
