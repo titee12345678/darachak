@@ -135,8 +135,43 @@ export class Demos {
     this.moonShadow.rotation.z = -Math.PI / 2;
     g.add(this.earthShadow, this.moonShadow);
 
-    // กล้องมุมมองจากโลก (จอ inset ของสาธิตเฟส)
-    this.insetCamera = new THREE.PerspectiveCamera(10, 1, 0.5, 200);
+    // ป้ายบอกตำแหน่งเฟสสำคัญ 4 จุดรอบวงโคจร (สาธิตเฟส)
+    this.phaseMarks = new THREE.Group();
+    [['🌑 เดือนมืด', -10, 0], ['🌓 ขึ้น 7-8 ค่ำ', 0, 10],
+      ['🌕 จันทร์เต็มดวง', 10, 0], ['🌗 แรม 7-8 ค่ำ', 0, -10]].forEach(([t, x, z]) => {
+      const dot = new THREE.Mesh(
+        new THREE.SphereGeometry(0.12, 8, 6),
+        new THREE.MeshBasicMaterial({ color: 0xffb454 }),
+      );
+      dot.position.set(x * 1.18, 0, z * 1.18);
+      const l = label(t, 'star-label');
+      l.position.y = 0.7;
+      dot.add(l);
+      this.phaseMarks.add(dot);
+    });
+    g.add(this.phaseMarks);
+
+    // เส้นแนวเรียงตรง ดวงอาทิตย์-โลก (สาธิตอุปราคา)
+    this.alignLine = new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(-65, 0, 0), new THREE.Vector3(30, 0, 0)]),
+      new THREE.LineBasicMaterial({ color: 0xffb454, transparent: true, opacity: 0.3 }),
+    );
+    g.add(this.alignLine);
+
+    // ป้ายฤดูสำคัญบนวงโคจร (สาธิตฤดูกาล)
+    this.seasonMarks = new THREE.Group();
+    [['มิ.ย. ครีษมายัน — เหนือร้อนสุด', -35, 0], ['ธ.ค. เหมายัน — เหนือหนาวสุด', 35, 0],
+      ['มี.ค. วสันตวิษุวัต — กลางวัน=กลางคืน', 0, 35], ['ก.ย. ศารทวิษุวัต — กลางวัน=กลางคืน', 0, -35]]
+      .forEach(([t, x, z]) => {
+        const l = label(t, 'star-label');
+        l.position.set(x * 1.12, 1.5, z * 1.12);
+        this.seasonMarks.add(l);
+      });
+    g.add(this.seasonMarks);
+
+    // กล้องจอเล็ก "มุมมองที่เห็นจริง"
+    this.insetCamera = new THREE.PerspectiveCamera(10, 1, 0.3, 300);
   }
 
   /* ── ฉากเปรียบเทียบขนาดจริง ─────────────────────────────── */
@@ -198,7 +233,7 @@ export class Demos {
         title: '🌙 เฟสของดวงจันทร์ (ข้างขึ้น-ข้างแรม)',
         slider: { min: 0, max: 29.5, step: 0.1, value: 0, label: 'เลื่อนวันในเดือนจันทรคติ' },
         camera: [[0, 34, 8], [0, 0, 0]],
-        inset: true,
+        inset: { label: '🔭 ดวงจันทร์ที่คนบนโลกเห็นจริง', view: 'moon-from-earth', fov: 10 },
         setup: () => {
           this.orbital.visible = true;
           this.compare.visible = false;
@@ -211,6 +246,9 @@ export class Demos {
           this.earthShadow.visible = false;
           this.moonShadow.visible = false;
           this.demoMoon.visible = true;
+          this.phaseMarks.visible = true;
+          this.alignLine.visible = false;
+          this.seasonMarks.visible = false;
         },
         apply: (day) => {
           const a = (day / 29.53) * Math.PI * 2;
@@ -234,6 +272,7 @@ export class Demos {
         title: '🌏 ฤดูกาลเกิดจากแกนโลกเอียง 23.5°',
         slider: { min: 0, max: 11, step: 1, value: 5, label: 'เลื่อนเดือน' },
         camera: [[0, 30, 52], [0, 0, 0]],
+        inset: { label: '🔭 โลกเมื่อมองจากดวงอาทิตย์ — ขั้วไหนรับแสง?', view: 'earth-from-sun', fov: 16 },
         setup: () => {
           this.orbital.visible = true;
           this.compare.visible = false;
@@ -244,6 +283,9 @@ export class Demos {
           this.earthShadow.visible = false;
           this.moonShadow.visible = false;
           this.demoMoon.visible = false;
+          this.phaseMarks.visible = false;
+          this.alignLine.visible = false;
+          this.seasonMarks.visible = true;
         },
         apply: (m) => {
           // มิถุนายน: โลกอยู่ฝั่งที่ขั้วเหนือ (เอียงไปทาง +X เสมอ) ชี้หาดวงอาทิตย์
@@ -260,6 +302,7 @@ export class Demos {
         title: '🌑 สุริยุปราคา — ดวงจันทร์บังดวงอาทิตย์',
         slider: { min: -16, max: 16, step: 0.2, value: -16, label: 'เลื่อนดวงจันทร์ผ่านแนวดวงอาทิตย์' },
         camera: [[6, 9, 24], [0, 0, 0]],
+        inset: { label: '🔭 ดวงอาทิตย์ที่คนบนโลกเห็น — ค่อย ๆ ถูกบัง!', view: 'sun-from-earth', fov: 14 },
         setup: () => {
           this.orbital.visible = true;
           this.compare.visible = false;
@@ -273,6 +316,9 @@ export class Demos {
           this.moonShadow.visible = true;
           this.demoMoon.visible = true;
           this.demoMoonMat.color.set(0xffffff);
+          this.phaseMarks.visible = false;
+          this.alignLine.visible = true;
+          this.seasonMarks.visible = false;
         },
         apply: (deg) => {
           const a = deg * DEG;
@@ -291,6 +337,7 @@ export class Demos {
         title: '🔴 จันทรุปราคา — ดวงจันทร์เข้าไปในเงาโลก (ราหูอมจันทร์)',
         slider: { min: 164, max: 196, step: 0.2, value: 164, label: 'เลื่อนดวงจันทร์ผ่านเงาโลก' },
         camera: [[14, 10, 26], [6, 0, 0]],
+        inset: { label: '🔭 ดวงจันทร์ที่คนบนโลกเห็น — กลายเป็นสีแดง!', view: 'moon-from-earth', fov: 16 },
         setup: () => {
           this.orbital.visible = true;
           this.compare.visible = false;
@@ -304,6 +351,9 @@ export class Demos {
           this.earthShadow.position.set(13, 0, 0);
           this.moonShadow.visible = false;
           this.demoMoon.visible = true;
+          this.phaseMarks.visible = false;
+          this.alignLine.visible = true;
+          this.seasonMarks.visible = false;
         },
         apply: (deg) => {
           const a = deg * DEG;
@@ -348,6 +398,7 @@ export class Demos {
     const def = this.defs[name];
     if (!def) return;
     this.active = name;
+    this._def = def;
     this.group.visible = true;
     def.setup();
     this._syncLabels();
@@ -376,6 +427,7 @@ export class Demos {
     }
     $('demo-panel').classList.remove('hidden');
     $('inset-frame').classList.toggle('hidden', !def.inset);
+    if (def.inset) $('inset-frame').querySelector('span').textContent = def.inset.label;
   }
 
   exit() {
@@ -391,21 +443,38 @@ export class Demos {
     if (this.active === 'phases') this.demoEarth.rotation.y += dt * 0.15;
   }
 
-  /* จอเล็ก "ดวงจันทร์ที่เห็นจากโลก" (เฉพาะสาธิตเฟส) */
+  /* จอเล็ก "มุมมองที่คนบนโลกเห็นจริง" — ทุกสาธิต */
   renderInset(renderer) {
-    if (this.active !== 'phases') return;
+    const inset = this._def?.inset;
+    if (!this.active || !inset) return;
     const w = renderer.domElement.clientWidth;
-    const s = Math.min(170, Math.floor(w * 0.32));
+    const s = Math.min(190, Math.floor(w * 0.34));
     // จอกว้าง: มุมขวาล่าง (พ้นแผงสาธิต) / จอแคบ: ลอยเหนือแผงตรงกลาง
     let x, y;
     if (w > 780) { x = w - s - 16; y = 16; }
     else { x = Math.floor(w / 2 - s / 2); y = ($('demo-panel').offsetHeight || 170) + 30; }
-    // กล้องอยู่ที่โลก มองไปดวงจันทร์
-    const dir = this.demoMoon.position.clone().normalize();
-    this.insetCamera.position.copy(dir).multiplyScalar(3.4);
-    this.insetCamera.lookAt(this.demoMoon.position);
-    this.insetCamera.aspect = 1;
-    this.insetCamera.updateProjectionMatrix();
+
+    // จัดกล้องตามชนิดมุมมอง
+    const cam = this.insetCamera;
+    const earth = this.demoEarthGroup.position;
+    if (inset.view === 'moon-from-earth') {
+      // ยืนบนโลก มองดวงจันทร์
+      const dir = this.demoMoon.position.clone().sub(earth).normalize();
+      cam.position.copy(earth).addScaledVector(dir, 3.3);
+      cam.lookAt(this.demoMoon.position);
+    } else if (inset.view === 'sun-from-earth') {
+      // ยืนบนโลก มองดวงอาทิตย์ (เห็นดวงจันทร์เคลื่อนผ่านหน้า)
+      const dir = this.demoSun.position.clone().sub(earth).normalize();
+      cam.position.copy(earth).addScaledVector(dir, 3.3);
+      cam.lookAt(this.demoSun.position);
+    } else { // earth-from-sun: มองโลกจากดวงอาทิตย์ เห็นขั้วที่รับแสง
+      const dir = earth.clone().sub(this.demoSun.position).normalize();
+      cam.position.copy(this.demoSun.position).addScaledVector(dir, 7.5);
+      cam.lookAt(earth);
+    }
+    cam.fov = inset.fov || 10;
+    cam.aspect = 1;
+    cam.updateProjectionMatrix();
     const frame = $('inset-frame');
     frame.style.width = `${s}px`;
     frame.style.height = `${s}px`;
