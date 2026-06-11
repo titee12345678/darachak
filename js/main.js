@@ -102,6 +102,7 @@ ui.onDeselect = () => { if (planetarium) planetarium.deselect(); };
 
 /* ── โหมดกล้อง ────────────────────────────────────────────── */
 function applySolarCamera() {
+  controls.enabled = true;
   controls.minDistance = 7;
   controls.maxDistance = 700;
   controls.enablePan = true;
@@ -114,6 +115,7 @@ function applySolarCamera() {
   controls.target.set(0, 0, 0);
 }
 function applySkyCamera() {
+  controls.enabled = true;
   controls.minDistance = 0.12;
   controls.maxDistance = 0.12;
   controls.enablePan = false;
@@ -130,7 +132,7 @@ function applySkyCamera() {
 function setMode(next) {
   if (next === mode) return;
   mode = next;
-  focusId = null;
+  clearFocus();
   ui.hideInfo();
   document.querySelectorAll('.mode-tab').forEach((b) => b.classList.toggle('active', b.dataset.mode === next));
   const isSolar = next === 'solar';
@@ -148,43 +150,88 @@ function setMode(next) {
   if (isSolar) applySolarCamera(); else applySkyCamera();
 }
 
-/* ── บินกล้องไปหาดาว (โหมดระบบสุริยะ) ────────────────────── */
+/* ── บินกล้องไปหาดาว (โหมดระบบสุริยะ) ────────────────────────
+   เฟส 1 "บินเข้า": ปิด controls ชั่วคราว บินแบบ deterministic
+   เฟส 2 "เกาะติด": เลื่อนกล้อง+เป้าตามดาวแบบแข็ง (ไม่มี lerp ไล่)
+   → ไม่แย่งบังคับกับมือผู้ใช้ = ไม่กระตุก                      */
 const _v1 = new THREE.Vector3(), _v2 = new THREE.Vector3();
 const _dir = new THREE.Vector3(), _right = new THREE.Vector3(),
   _sUp = new THREE.Vector3(), _aim = new THREE.Vector3();
+const _lastFocus = new THREE.Vector3();
+let fly = null;            // { t, fromPos, fromTarget, want }
+let interacting = false;   // ผู้ใช้กำลังลาก/ซูมอยู่หรือไม่
+controls.addEventListener('start', () => { interacting = true; });
+controls.addEventListener('end', () => { interacting = false; });
+
 function focusOn(id) {
+  solar.getBodyWorldPosition(id, _v1);
+  const r = solar.getBodyRadius(id);
   focusId = id;
+  fly = {
+    t: 0,
+    want: Math.max(r * 4.2, 1.6),
+    fromPos: camera.position.clone(),
+    fromTarget: controls.target.clone(),
+  };
+  controls.enabled = false;                       // กันมือชนกับแอนิเมชันบิน
+  controls.minDistance = Math.max(r * 1.4, 0.5);  // ให้ซูมใกล้ดาวเล็กได้ ไม่โดนดันกลับ
+  _lastFocus.copy(_v1);
   ui.toast(`กำลังบินไปยัง ${REGISTRY.get(id).nameTh} …`, 1800);
 }
 
-/* บนมือถือเมื่อ bottom-sheet เปิดอยู่ ให้เลื่อนจุดเล็งลงล่าง
-   เพื่อดันดาวขึ้นไปลอยบนครึ่งจอที่มองเห็น (ไม่โดนแผงบัง) */
-function aimPoint(planetPos, want, out) {
-  out.copy(planetPos);
+function clearFocus() {
+  focusId = null;
+  fly = null;
+  controls.enabled = true;
+  controls.minDistance = 7;
+}
+
+/* จุดเล็งที่ดันดาวขึ้นครึ่งบนจอ เมื่อ bottom-sheet มือถือเปิดอยู่ */
+function sheetIsOpen() {
   const holoEl = document.getElementById('holo');
-  const sheetOpen = innerWidth <= 600
+  return innerWidth <= 600
     && !holoEl.classList.contains('hidden')
     && !holoEl.classList.contains('collapsed');
-  if (!sheetOpen) return out;
-  _dir.subVectors(controls.target, camera.position).normalize();
+}
+function aimPoint(planetPos, dist, out) {
+  out.copy(planetPos);
+  if (!sheetIsOpen()) return out;
+  _dir.subVectors(planetPos, camera.position).normalize();
   _right.crossVectors(_dir, camera.up).normalize();
   _sUp.crossVectors(_right, _dir).normalize();
-  return out.addScaledVector(_sUp, -want * 0.42);
+  return out.addScaledVector(_sUp, -dist * 0.42);
 }
 
 function updateFocus(dt) {
   if (!focusId || mode !== 'solar') return;
   solar.getBodyWorldPosition(focusId, _v1);
-  const r = solar.getBodyRadius(focusId);
-  const want = Math.max(r * 4.2, 1.6);
-  aimPoint(_v1, want, _aim);
-  controls.target.lerp(_aim, Math.min(1, dt * 3.2));
-  // เข้าใกล้จนระยะพอดี (วัดจากตัวดาวจริง)
-  _v2.copy(camera.position).sub(_v1);
-  const len = _v2.length();
-  if (Math.abs(len - want) > r * 0.3) {
-    const newLen = THREE.MathUtils.lerp(len, want, Math.min(1, dt * 2.2));
-    camera.position.copy(_v1).add(_v2.setLength(newLen));
+
+  if (fly) { // ── เฟสบินเข้า ──
+    fly.t += dt / 1.5;
+    const k = Math.min(1, fly.t);
+    const e = 1 - Math.pow(1 - k, 3); // easeOutCubic
+    // ปลายทาง: ค้างทิศเข้าหาดาวตามตำแหน่งเริ่ม แต่ตามดาวที่เคลื่อนอยู่
+    _v2.subVectors(fly.fromPos, _v1).normalize();
+    const endPos = _v2.multiplyScalar(fly.want).add(_v1);
+    camera.position.lerpVectors(fly.fromPos, endPos, e);
+    aimPoint(_v1, fly.want, _aim);
+    controls.target.lerpVectors(fly.fromTarget, _aim, e);
+    _lastFocus.copy(_v1);
+    if (k >= 1) { fly = null; controls.enabled = true; }
+    return;
+  }
+
+  // ── เฟสเกาะติด: เลื่อนตามดาวแบบแข็ง ──
+  _v2.subVectors(_v1, _lastFocus);
+  camera.position.add(_v2);
+  controls.target.add(_v2);
+  _lastFocus.copy(_v1);
+
+  // จัดเฟรมหลบแผงเฉพาะตอนผู้ใช้ไม่ได้ลากจอ (ไม่แย่งบังคับ)
+  if (!interacting) {
+    const dist = camera.position.distanceTo(_v1);
+    aimPoint(_v1, dist, _aim);
+    controls.target.lerp(_aim, Math.min(1, dt * 2.5));
   }
 }
 
@@ -262,7 +309,7 @@ function setupControls() {
     solar.setLabelsVisible(on);
   });
   $('reset-cam').addEventListener('click', () => {
-    focusId = null;
+    clearFocus();
     applySolarCamera();
   });
 
