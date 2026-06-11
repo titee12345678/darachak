@@ -8,6 +8,16 @@ import {
 
 const $ = (id) => document.getElementById(id);
 
+/* ไอคอนแผงข้อมูล: ใช้ภาพพื้นผิวจริงของดาวแต่ละดวง */
+const GLYPH_TEX = {
+  sun: '2k_sun.jpg', mercury: '2k_mercury.jpg', venus: '2k_venus_atmosphere.jpg',
+  earth: '2k_earth_daymap.jpg', mars: '2k_mars.jpg', jupiter: '2k_jupiter.jpg',
+  saturn: '2k_saturn.jpg', uranus: '2k_uranus.jpg', neptune: '2k_neptune.jpg',
+  moon: '2k_moon.jpg', ceres: '2k_ceres_fictional.jpg',
+};
+/* จุดที่ครอปจากแผนที่ (โลกเลือกฝั่งเอเชีย มองเห็นประเทศไทย) */
+const GLYPH_POS = { earth: '74% 42%', jupiter: '64% 55%', mars: '20% 50%' };
+
 /* รวม object ทุกชนิดเข้า registry เดียว ค้นด้วย id */
 export const REGISTRY = new Map();
 [SUN, ...PLANETS, ...DWARF_PLANETS, COMET, EARTH_MOON, ASTEROID_BELT_INFO].forEach((o) => REGISTRY.set(o.id, { ...o, world: 'solar' }));
@@ -46,10 +56,23 @@ export class UI {
     $('holo-en').textContent = o.nameEn;
     $('holo-read').textContent = o.read || '';
 
-    // โลโก้กลม ๆ สีตามวัตถุ
+    // ไอคอนดาว: ภาพพื้นผิวจริง (ถ้ามี) + แสงเงาทรงกลม / สำรองเป็นไล่สี
     const glyph = $('holo-glyph');
-    const col = o.color || '#9fd8ff';
-    glyph.style.background = `radial-gradient(circle at 33% 33%, #ffffff, ${col} 55%, #0a0a14 130%)`;
+    const tex = GLYPH_TEX[id];
+    if (tex) {
+      glyph.style.background =
+        `radial-gradient(circle at 32% 28%, rgba(255,255,255,.22), rgba(255,255,255,0) 48%),
+         url('textures/${tex}')`;
+      glyph.style.backgroundSize = 'cover, auto 112%';
+      glyph.style.backgroundPosition = `center, ${GLYPH_POS[id] || '32% 50%'}`;
+      glyph.classList.add('real');
+    } else {
+      const col = o.color || '#9fd8ff';
+      glyph.style.background = `radial-gradient(circle at 33% 33%, #ffffff, ${col} 55%, #0a0a14 130%)`;
+      glyph.style.backgroundSize = '';
+      glyph.style.backgroundPosition = '';
+      glyph.classList.remove('real');
+    }
     glyph.classList.toggle('ringed', !!o.rings);
 
     // สถิติ: โหมดเด็กตัดเหลือ 4 แถวแรก / โหมดอื่นแสดงครบ

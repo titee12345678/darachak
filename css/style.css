@@ -370,6 +370,14 @@ button { font-family: var(--font-display); cursor: pointer; }
   animation: glyph-spin 14s linear infinite;
   position: relative;
 }
+/* ทรงกลมจากภาพพื้นผิวจริง: เงาขอบดวง + แสงสะท้อนด้านสว่าง */
+.holo-glyph.real {
+  box-shadow:
+    inset -16px -11px 24px rgba(0, 0, 6, .82),
+    inset -26px -18px 34px rgba(0, 0, 6, .45),
+    inset 7px 7px 16px rgba(255, 255, 255, .14),
+    0 0 22px rgba(111, 227, 255, .35);
+}
 .holo-glyph.ringed::after {
   content: ""; position: absolute; inset: -11px -16px; border-radius: 50%;
   border: 3px solid rgba(216, 191, 140, .65);
