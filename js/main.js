@@ -98,8 +98,12 @@ function onPick(id) {
     focusOn(id); // แตะดาว → กล้องบินซูมไปหาทันที
   }
 }
-ui.onFocus = (id) => {
-  if (mode === 'solar' && REGISTRY.get(id)?.world === 'solar') focusOn(id);
+/* ปุ่ม "หมุนรอบดาว" = เปิด/ปิดหมุนชมรอบดาวอัตโนมัติ */
+ui.onFocus = () => {
+  autoOrbit = !autoOrbit;
+  if (focusId && !fly) controls.autoRotate = autoOrbit;
+  document.getElementById('focus-btn').classList.toggle('on', autoOrbit);
+  ui.toast(autoOrbit ? 'เปิดหมุนรอบดาวอัตโนมัติ ⟳' : 'ปิดหมุนรอบดาวอัตโนมัติ', 1500);
 };
 ui.onDeselect = () => { if (planetarium) planetarium.deselect(); };
 
@@ -163,23 +167,39 @@ const _dir = new THREE.Vector3(), _right = new THREE.Vector3(),
   _sUp = new THREE.Vector3(), _aim = new THREE.Vector3();
 const _lastFocus = new THREE.Vector3();
 let fly = null;            // { t, fromPos, fromTarget, want }
+let flyHome = null;        // แอนิเมชันบินกลับภาพรวม
+let autoOrbit = true;      // หมุนรอบดาวอัตโนมัติเมื่อโฟกัส
 let interacting = false;   // ผู้ใช้กำลังลาก/ซูมอยู่หรือไม่
+const HOME_POS = new THREE.Vector3(0, 55, 130);
+const HOME_TARGET = new THREE.Vector3(0, 0, 0);
 controls.addEventListener('start', () => { interacting = true; });
 controls.addEventListener('end', () => { interacting = false; });
+
+/* ระยะกล้องที่ทำให้เห็นดาวเต็มดวงพอดี ไม่ล้นจอแคบ (คิดจาก fov จริงทั้งสองแกน) */
+function focusDistance(r) {
+  const vFov = camera.fov * Math.PI / 180;
+  const hFov = 2 * Math.atan(Math.tan(vFov / 2) * camera.aspect);
+  const minFov = Math.min(vFov, hFov);
+  // ให้เส้นผ่านศูนย์กลางดาวกินราว 55% ของมุมมองด้านแคบสุด
+  return Math.max(r / Math.tan(minFov * 0.275), r * 2.4, 1.6);
+}
 
 function focusOn(id) {
   solar.getBodyWorldPosition(id, _v1);
   const r = solar.getBodyRadius(id);
   focusId = id;
+  flyHome = null;
   fly = {
     t: 0,
-    want: Math.max(r * 4.2, 1.6),
+    want: focusDistance(r),
     fromPos: camera.position.clone(),
     fromTarget: controls.target.clone(),
   };
   controls.enabled = false;                       // กันมือชนกับแอนิเมชันบิน
+  controls.autoRotate = false;
   controls.minDistance = Math.max(r * 1.4, 0.5);  // ให้ซูมใกล้ดาวเล็กได้ ไม่โดนดันกลับ
   _lastFocus.copy(_v1);
+  document.getElementById('focus-btn').classList.toggle('on', autoOrbit);
   ui.toast(`กำลังบินไปยัง ${REGISTRY.get(id).nameTh} …`, 1800);
 }
 
@@ -187,7 +207,25 @@ function clearFocus() {
   focusId = null;
   fly = null;
   controls.enabled = true;
+  controls.autoRotate = false;
   controls.minDistance = 7;
+}
+
+/* บินกลับภาพรวมแบบนุ่ม ๆ จากตำแหน่งปัจจุบัน */
+function goOverview() {
+  clearFocus();
+  ui.hideInfo();
+  controls.enabled = false;
+  flyHome = { t: 0, fromPos: camera.position.clone(), fromTarget: controls.target.clone() };
+}
+function updateHomeFly(dt) {
+  if (!flyHome) return;
+  flyHome.t += dt / 1.4;
+  const k = Math.min(1, flyHome.t);
+  const e = 1 - Math.pow(1 - k, 3);
+  camera.position.lerpVectors(flyHome.fromPos, HOME_POS, e);
+  controls.target.lerpVectors(flyHome.fromTarget, HOME_TARGET, e);
+  if (k >= 1) { flyHome = null; controls.enabled = true; }
 }
 
 /* จุดเล็งที่ดันดาวขึ้นครึ่งบนจอ เมื่อ bottom-sheet มือถือเปิดอยู่ */
@@ -203,7 +241,9 @@ function aimPoint(planetPos, dist, out) {
   _dir.subVectors(planetPos, camera.position).normalize();
   _right.crossVectors(_dir, camera.up).normalize();
   _sUp.crossVectors(_right, _dir).normalize();
-  return out.addScaledVector(_sUp, -dist * 0.42);
+  // เลื่อนดาวขึ้นไปกลางพื้นที่ที่เหลือเหนือแผง (คิดจาก fov จริง ไม่ดันจนตกขอบ)
+  const off = dist * Math.tan(camera.fov * Math.PI / 180 * 0.21);
+  return out.addScaledVector(_sUp, -off);
 }
 
 function updateFocus(dt) {
@@ -221,7 +261,12 @@ function updateFocus(dt) {
     aimPoint(_v1, fly.want, _aim);
     controls.target.lerpVectors(fly.fromTarget, _aim, e);
     _lastFocus.copy(_v1);
-    if (k >= 1) { fly = null; controls.enabled = true; }
+    if (k >= 1) {
+      fly = null;
+      controls.enabled = true;
+      controls.autoRotate = autoOrbit;  // ถึงดาวแล้ว → หมุนชมรอบดาวอัตโนมัติ
+      controls.autoRotateSpeed = 0.9;
+    }
     return;
   }
 
@@ -312,10 +357,7 @@ function setupControls() {
     e.currentTarget.classList.toggle('on', on);
     solar.setLabelsVisible(on);
   });
-  $('reset-cam').addEventListener('click', () => {
-    clearFocus();
-    applySolarCamera();
-  });
+  $('reset-cam').addEventListener('click', () => goOverview());
 
   // ลิ้นชัก
   $('drawer-toggle').addEventListener('click', () => $('drawer').classList.toggle('open'));
@@ -433,6 +475,7 @@ function animate() {
   if (solar && mode === 'solar') {
     solar.update(paused ? 0 : dt, paused ? 0 : daysPerSec(), camera);
     updateFocus(dt);
+    updateHomeFly(dt);
     updateSimDate(dt);
   }
   if (mode === 'sky') {
