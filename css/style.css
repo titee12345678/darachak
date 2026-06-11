@@ -261,12 +261,15 @@ button { font-family: var(--font-display); cursor: pointer; }
 #drawer-body {
   width: 0; max-height: 62vh; overflow: hidden auto;
   background: var(--panel); backdrop-filter: blur(10px);
-  border: 1px solid var(--holo-faint); border-left: none;
+  border: none; /* ขอบโชว์เฉพาะตอนเปิด — กันเส้นโผล่ตอนหุบ */
   border-radius: 0 10px 10px 0;
   transition: width .3s ease, padding .3s ease;
   padding: 0;
 }
-#drawer.open #drawer-body { width: 215px; padding: 14px; }
+#drawer.open #drawer-body {
+  width: 215px; padding: 14px;
+  border: 1px solid var(--holo-faint); border-left: none;
+}
 #drawer.open #drawer-toggle { color: var(--amber); }
 #drawer-title {
   font-family: var(--font-display); font-size: 13px; font-weight: 600;
