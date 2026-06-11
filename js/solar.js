@@ -191,6 +191,7 @@ export class SolarSystem {
     }
 
     const label = makeLabel('ดวงอาทิตย์', '(The Sun)', 'obj-label sun-label', () => this.onPick(SUN.id));
+    label.userData.pri = 1;
     label.position.set(0, SUN.radius + 2.2, 0);
     sun.add(label);
     this.labels.push(label);
@@ -343,6 +344,7 @@ export class SolarSystem {
         this.pickables.push(moonMesh);
 
         const mlabel = makeLabel('ดวงจันทร์', '(Moon)', 'obj-label', () => this.onPick(EARTH_MOON.id));
+        mlabel.userData.pri = 90; // หลีกทางให้ป้ายโลกเสมอ
         mlabel.position.set(0, EARTH_MOON.radius + 0.5, 0);
         moonMesh.add(mlabel);
         this.labels.push(mlabel);
@@ -374,8 +376,9 @@ export class SolarSystem {
       this.group.add(orbit);
       this.orbits.push(orbit);
 
-      // ป้ายชื่อไทย (อังกฤษในวงเล็บ)
+      // ป้ายชื่อไทย (อังกฤษในวงเล็บ) — pri น้อย = สำคัญกว่า ใช้ตอนป้ายชนกัน
       const label = makeLabel(p.nameTh, `(${p.nameEn.split(' ')[0]})`, 'obj-label', () => this.onPick(p.id));
+      label.userData.pri = p.type === 'dwarf' ? 60 : 10 + idx;
       label.position.set(0, p.radius + (p.rings ? p.radius * 0.6 : 0) + 0.9, 0);
       holder.add(label);
       this.labels.push(label);
@@ -420,6 +423,7 @@ export class SolarSystem {
     this.group.add(beltPick);
 
     const label = makeLabel('แถบดาวเคราะห์น้อย', '(Asteroid Belt)', 'obj-label', () => this.onPick('belt'));
+    label.userData.pri = 80;
     label.position.set(0, 1.6, -38);
     this.group.add(label);
     this.labels.push(label);
@@ -458,6 +462,7 @@ export class SolarSystem {
     this.orbits.push(orbit);
 
     const label = makeLabel('ดาวหางฮัลเลย์', '(Halley)', 'obj-label', () => this.onPick(COMET.id));
+    label.userData.pri = 85;
     label.position.set(0, 1.2, 0);
     head.add(label);
     this.labels.push(label);
@@ -561,7 +566,34 @@ export class SolarSystem {
   }
 
   setOrbitsVisible(v) { this.orbits.forEach((o) => { o.visible = v; }); }
-  setLabelsVisible(v) { this.labels.forEach((l) => { l.visible = v; }); }
+  setLabelsVisible(v) {
+    this.labelsOn = v;
+    this.labels.forEach((l) => { l.visible = v; });
+  }
+
+  /* ── declutter: ซ่อนป้ายที่ทับกันบนจอ (ลำดับสร้าง = ลำดับความสำคัญ) ── */
+  declutterLabels(camera, width, height) {
+    if (this.labelsOn === false || !this.group.visible) return;
+    const placed = [];
+    const v = this._declutterV ??= new THREE.Vector3();
+    this._labelOrder ??= [...this.labels].sort(
+      (a, b) => (a.userData.pri ?? 50) - (b.userData.pri ?? 50));
+    for (const l of this._labelOrder) {
+      l.getWorldPosition(v).project(camera);
+      if (v.z > 1 || v.x < -1.1 || v.x > 1.1 || v.y < -1.1 || v.y > 1.1) {
+        l.visible = false; // อยู่หลังกล้องหรือนอกจอ
+        continue;
+      }
+      const x = (v.x * 0.5 + 0.5) * width;
+      const y = (-v.y * 0.5 + 0.5) * height;
+      const w = (l.element.offsetWidth || 70) + 6;
+      const h = (l.element.offsetHeight || 20) + 4;
+      const r = { x1: x - w / 2, x2: x + w / 2, y1: y - h / 2, y2: y + h / 2 };
+      const hit = placed.some((p) => !(r.x2 < p.x1 || r.x1 > p.x2 || r.y2 < p.y1 || r.y1 > p.y2));
+      l.visible = !hit;
+      if (!hit) placed.push(r);
+    }
+  }
   setVisible(v) {
     this.group.visible = v;
     this.labels.forEach((l) => { l.visible = v; });

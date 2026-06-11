@@ -467,6 +467,15 @@ function updateSimDate(dt) {
   $('sim-date').textContent = simDateFmt.format(new Date(J2000_MS + solar.simDays * 86400000));
 }
 
+/* ซ่อนป้ายชื่อที่ทับกันบนจอ (สำคัญมากบนมือถือ) */
+let declutterTimer = 0;
+function updateDeclutter(dt) {
+  declutterTimer -= dt;
+  if (declutterTimer > 0) return;
+  declutterTimer = 0.2;
+  solar.declutterLabels(camera, innerWidth, innerHeight);
+}
+
 /* ── วงจรเรนเดอร์ ─────────────────────────────────────────── */
 const clock = new THREE.Clock();
 function animate() {
@@ -477,6 +486,7 @@ function animate() {
     updateFocus(dt);
     updateHomeFly(dt);
     updateSimDate(dt);
+    updateDeclutter(dt);
   }
   if (mode === 'sky') {
     updateLookTween(dt);
