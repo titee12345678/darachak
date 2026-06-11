@@ -236,11 +236,12 @@ function setupControls() {
       ui.toast(`เปลี่ยนเป็นโหมด${{ kid: 'เด็ก 🧒', student: 'นักเรียน 📘', expert: 'ผู้เชี่ยวชาญ 🔭' }[b.dataset.level]}`);
     }));
 
-  // ความเร็วเวลา
+  // ความเร็วเวลา (ตัวคูณของเวลาจริง)
   const speedInput = $('speed');
+  const fmtCompact = new Intl.NumberFormat('th-TH', { notation: 'compact', maximumFractionDigits: 1 });
   const updateSpeedLabel = () => {
-    const d = daysPerSec();
-    $('speed-readout').textContent = d < 1 ? `×${d.toFixed(1)}` : `×${Math.round(d)}`;
+    const m = speedMultiplier();
+    $('speed-readout').textContent = `×${m < 1000 ? Math.round(m).toLocaleString('th-TH') : fmtCompact.format(m)}`;
   };
   speedInput.addEventListener('input', updateSpeedLabel);
   updateSpeedLabel();
@@ -339,9 +340,14 @@ function setupControls() {
   el.addEventListener('pointercancel', endTouch);
 }
 
-function daysPerSec() {
+/* ตัวคูณเวลาจริง: สไลเดอร์ 0..100 → ×1 ถึง ×10,000,000 (สเกล log) */
+function speedMultiplier() {
   const v = +$('speed').value;
-  return Math.pow(v / 100, 2) * 120 + 0.2;
+  return Math.pow(10, (v / 100) * 7);
+}
+/* แปลงเป็นวันจำลองต่อวินาทีจริง — ×1 = เวลาเดินเท่าชีวิตจริง */
+function daysPerSec() {
+  return speedMultiplier() / 86400;
 }
 
 /* ── เข็มทิศบอกทิศที่กำลังมอง ─────────────────────────────── */

@@ -430,18 +430,23 @@ export class SolarSystem {
       const th = b.phase + (t / p.period) * Math.PI * 2;
       const r = b.a * (1 - b.e * b.e) / (1 + b.e * Math.cos(th));
       b.holder.position.set(Math.cos(th) * r, 0, Math.sin(th) * r);
-      b.mesh.rotation.y += dt * daysPerSec * b.rotSpeed * 0.6 + dt * 0.02;
-      if (b.extras.clouds) b.extras.clouds.rotation.y += dt * 0.012 + dt * daysPerSec * 0.004;
+      // หมุนรอบตัวเองตามคาบจริง (rotSpeed = รอบ/วันจำลอง)
+      b.mesh.rotation.y += dt * daysPerSec * b.rotSpeed * Math.PI * 2;
+      if (b.extras.clouds) b.extras.clouds.rotation.y += dt * daysPerSec * Math.PI * 2 * 1.12; // เมฆไหลเร็วกว่าพื้นเล็กน้อย
       if (b.extras.moonPivot) b.extras.moonPivot.rotation.y = (t / EARTH_MOON.period) * Math.PI * 2;
-      if (b.extras.miniMoons) b.extras.miniMoons.forEach((m) => { m.piv.rotation.y += dt * (0.2 + daysPerSec * 0.01) * m.speed; });
+      if (b.extras.miniMoons) b.extras.miniMoons.forEach((m) => { m.piv.rotation.y += dt * daysPerSec * m.speed * 4; });
     }
 
-    // แถบดาวเคราะห์น้อย
-    this.beltGroup.rotation.y += dt * daysPerSec * 0.0011;
+    // แถบดาวเคราะห์น้อย (คาบเฉลี่ย ~4.6 ปีของซีรีส)
+    this.beltGroup.rotation.y += dt * daysPerSec * (Math.PI * 2 / 1680);
 
-    // ดาวหาง
+    // ดาวหาง — กวาดมุมเร็วใกล้ดวงอาทิตย์ ช้าไกลออกไป (กฎข้อ 2 ของเคปเลอร์)
     const cp = this.cometParams;
-    cp.angle += dt * daysPerSec * 0.0035 * (1 + 2.4 / (1 + Math.pow(this._cometR() / 20, 2)));
+    {
+      const rNow = this._cometR();
+      const L = Math.PI * 2 * cp.a * cp.a * Math.sqrt(1 - cp.e * cp.e) / COMET.period;
+      cp.angle += dt * daysPerSec * L / (rNow * rNow);
+    }
     const r = this._cometR();
     const pos = new THREE.Vector3(Math.cos(cp.angle) * r, 0, Math.sin(cp.angle) * r);
     this.cometHead.position.copy(pos);
