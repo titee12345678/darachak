@@ -502,12 +502,18 @@ function enterDemo(name) {
   clearFocus();
   ui.hideInfo();
   solar.setVisible(false);
+  // ฉากเทียบขนาด = แผนภาพวิทยาศาสตร์ — ปิดทุ่งดาว/ฝุ่นอวกาศ
+  // กันจุดฟุ้ง ๆ ถูกเข้าใจผิดว่าเป็นดาวเคราะห์น้อย
+  starfield.visible = name !== 'compare';
+  scene.background = name === 'compare' ? new THREE.Color(0x03060d) : deepSpaceTex;
   $('deck-solar').classList.add('hidden');
   demos.enter(name);
 }
 function exitDemo() {
   demos.exit();
   solar.setVisible(true);
+  starfield.visible = true;
+  scene.background = deepSpaceTex;
   $('deck-solar').classList.remove('hidden');
   applySolarCamera();
 }
