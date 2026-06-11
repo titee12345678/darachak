@@ -336,11 +336,13 @@ button { font-family: var(--font-display); cursor: pointer; }
   background: repeating-linear-gradient(0deg, rgba(111, 227, 255, .035) 0 1px, transparent 1px 4px);
 }
 .holo-scan::after {
-  content: ""; position: absolute; left: 0; right: 0; height: 70px;
+  content: ""; position: absolute; left: 0; right: 0; top: 0; height: 70px;
   background: linear-gradient(180deg, transparent, rgba(111, 227, 255, .09), transparent);
+  /* แอนิเมตด้วย transform (GPU) — แอนิเมต top ทำให้ทั้งแผง repaint จนตัวหนังสือกระพริบ */
   animation: scanline 4.2s linear infinite;
+  will-change: transform;
 }
-@keyframes scanline { from { top: -80px; } to { top: 110%; } }
+@keyframes scanline { from { transform: translateY(-80px); } to { transform: translateY(85vh); } }
 
 /* แถบจับย่อ/ขยาย (โชว์เฉพาะมือถือ) */
 #holo-handle {
@@ -370,7 +372,6 @@ button { font-family: var(--font-display); cursor: pointer; }
   flex: none; width: 64px; height: 64px; border-radius: 50%;
   background: radial-gradient(circle at 33% 33%, #fff, #888);
   box-shadow: 0 0 22px rgba(111, 227, 255, .4);
-  animation: glyph-spin 14s linear infinite;
   position: relative;
 }
 /* ทรงกลมจากภาพพื้นผิวจริง: เงาขอบดวง + แสงสะท้อนด้านสว่าง */
@@ -386,7 +387,6 @@ button { font-family: var(--font-display); cursor: pointer; }
   border: 3px solid rgba(216, 191, 140, .65);
   transform: rotate(-22deg) scaleY(.32);
 }
-@keyframes glyph-spin { to { filter: hue-rotate(0deg); } }
 
 #holo-name {
   font-family: var(--font-display); font-size: 26px; font-weight: 600;
