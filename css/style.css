@@ -401,6 +401,15 @@ button { font-family: var(--font-display); cursor: pointer; }
 .holo-actions button.speaking { color: var(--amber); border-color: var(--amber); animation: pulse 1s infinite; }
 .holo-actions button.on { color: var(--amber); border-color: var(--amber); background: rgba(255, 180, 84, .12); }
 
+/* ภาพถ่ายจริงของวัตถุ */
+#holo-photo { margin: 0 0 14px; }
+#holo-photo img {
+  width: 100%; border-radius: 6px; display: block;
+  border: 1px solid var(--holo-faint);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, .5);
+}
+#holo-photo figcaption { font-size: 10.5px; color: var(--ink-dim); margin-top: 4px; text-align: right; }
+
 #holo-stats { display: grid; grid-template-columns: 1fr; gap: 0; margin-bottom: 14px; }
 #holo-stats .row {
   display: flex; justify-content: space-between; gap: 14px; align-items: baseline;

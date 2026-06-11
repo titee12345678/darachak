@@ -83,6 +83,8 @@ export class Planetarium {
     this._buildDSOs();
     this._buildSkyPlanets();
     this._buildHorizon();
+    this._buildMeteors();
+    this._buildAtmosphere();
     this.setSky(this.lat, this.lon, this.date);
     this.setVisible(false);
   }
@@ -113,20 +115,34 @@ export class Planetarium {
       col[i * 3] = color.r * lum; col[i * 3 + 1] = color.g * lum; col[i * 3 + 2] = color.b * lum;
       size[i] = THREE.MathUtils.clamp(7.2 - mag * 1.0, 1.1, 10);
     }
+    const tw = new Float32Array(COUNT);
+    const randTw = mulberry32(777);
+    for (let i = 0; i < COUNT; i++) tw[i] = randTw();
     const geo = new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
     geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
     geo.setAttribute('aSize', new THREE.BufferAttribute(size, 1));
+    geo.setAttribute('aTw', new THREE.BufferAttribute(tw, 1));
+    this.starUniforms = { uTime: { value: 0 }, uDay: { value: 0 } };
     this.bgStars = new THREE.Points(geo, new THREE.ShaderMaterial({
       transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
-      vertexShader: `attribute float aSize; varying vec3 vColor; varying float vUp;
-        void main(){ vColor = color; vUp = position.y;
+      uniforms: this.starUniforms,
+      vertexShader: `attribute float aSize; attribute float aTw;
+        varying vec3 vColor; varying float vUp; varying float vTw;
+        void main(){ vColor = color; vUp = position.y; vTw = aTw;
           gl_PointSize = aSize;
           gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
-      fragmentShader: `varying vec3 vColor; varying float vUp;
+      fragmentShader: `uniform float uTime; uniform float uDay;
+        varying vec3 vColor; varying float vUp; varying float vTw;
         void main(){ vec2 c = gl_PointCoord - 0.5; float d = length(c) * 2.0;
           float a = smoothstep(1.0, 0.25, d);
-          if (vUp < 0.0) a *= 0.0;       // ใต้ขอบฟ้ามองไม่เห็น
+          if (vUp < 0.0) a *= 0.0;                       // ใต้ขอบฟ้ามองไม่เห็น
+          // ดาวกะพริบระยิบ (บรรยากาศหักเหแสง) — แรงขึ้นใกล้ขอบฟ้า
+          float near = 1.0 - smoothstep(0.0, 160.0, vUp);
+          float tw = 1.0 - (0.12 + 0.3 * near) * (0.5 + 0.5 * sin(uTime * (1.5 + vTw * 4.0) + vTw * 60.0));
+          // แสงดาวจางลงใกล้ขอบฟ้า (มองผ่านอากาศหนากว่า)
+          float ext = mix(0.25, 1.0, smoothstep(0.0, 100.0, vUp));
+          a *= tw * ext * (1.0 - uDay * 0.93);            // กลางวันดาวหายไป
           gl_FragColor = vec4(vColor, a); }`,
       vertexColors: true,
     }));
@@ -299,6 +315,67 @@ export class Planetarium {
     });
   }
 
+  /* ── ดาวตก! ────────────────────────────────────────────── */
+  _buildMeteors() {
+    this.meteors = [];
+    for (let i = 0; i < 3; i++) {
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(6), 3));
+      const line = new THREE.Line(geo, new THREE.LineBasicMaterial({
+        color: 0xfff8e8, transparent: true, opacity: 0,
+        blending: THREE.AdditiveBlending, depthWrite: false,
+      }));
+      this.group.add(line);
+      this.meteors.push({ line, t: 2, dur: 1, start: new THREE.Vector3(), dir: new THREE.Vector3(), len: 50 });
+    }
+    this.meteorTimer = 4;
+  }
+
+  _spawnMeteor() {
+    const m = this.meteors.find((x) => x.t >= 1);
+    if (!m) return;
+    // จุดเริ่มสุ่มบนฟ้า (มุมเงย 25–75°)
+    const az = Math.random() * Math.PI * 2;
+    const alt = (25 + Math.random() * 50) * Math.PI / 180;
+    m.start.set(
+      Math.cos(alt) * Math.sin(az) * R * 0.97,
+      Math.sin(alt) * R * 0.97,
+      Math.cos(alt) * Math.cos(az) * R * 0.97,
+    );
+    // ทิศพุ่ง: สุ่มแนวเฉียงลง
+    const up = m.start.clone().normalize();
+    const tangent = new THREE.Vector3(Math.random() - 0.5, 0, Math.random() - 0.5)
+      .cross(up).normalize();
+    m.dir.copy(tangent).addScaledVector(up, -0.55).normalize();
+    m.len = 35 + Math.random() * 55;
+    m.dur = 0.45 + Math.random() * 0.5;
+    m.t = 0;
+  }
+
+  /* เรียกทุกเฟรมจาก main (เฉพาะโหมดท้องฟ้า) */
+  update(dt, elapsed) {
+    if (!this.group.visible) return;
+    this.starUniforms.uTime.value = elapsed;
+    // ดาวตกสุ่มทุก 4–13 วินาที (เฉพาะตอนฟ้ามืด)
+    this.meteorTimer -= dt;
+    if (this.meteorTimer <= 0) {
+      if ((this.dayFactor || 0) < 0.4) this._spawnMeteor();
+      this.meteorTimer = 4 + Math.random() * 9;
+    }
+    for (const m of this.meteors) {
+      if (m.t >= 1) { m.line.material.opacity = 0; continue; }
+      m.t += dt / m.dur;
+      const k = Math.min(1, m.t);
+      const head = m.start.clone().addScaledVector(m.dir, k * m.len);
+      const tail = head.clone().addScaledVector(m.dir, -Math.min(k * m.len, 14));
+      const p = m.line.geometry.attributes.position;
+      p.setXYZ(0, tail.x, tail.y, tail.z);
+      p.setXYZ(1, head.x, head.y, head.z);
+      p.needsUpdate = true;
+      m.line.material.opacity = Math.sin(Math.PI * k) * 0.95;
+    }
+  }
+
   /* ── พื้นดิน ขอบฟ้า และทิศ ─────────────────────────────── */
   _buildHorizon() {
     // พื้นดินมืดใต้ขอบฟ้า
@@ -370,6 +447,52 @@ export class Planetarium {
       );
       this.group.add(l);
     });
+  }
+
+  /* ── บรรยากาศ: เงาต้นไม้รอบขอบฟ้า + โดมท้องฟ้ากลางวัน ──── */
+  _buildAtmosphere() {
+    // เงาต้นไม้/เนินเขา (วาดสุ่มบน canvas พันรอบขอบฟ้า)
+    const c = document.createElement('canvas');
+    c.width = 2048; c.height = 220;
+    const ctx = c.getContext('2d');
+    const rand = mulberry32(2468);
+    ctx.fillStyle = '#020403';
+    let base = 160;
+    ctx.beginPath();
+    ctx.moveTo(0, 220);
+    for (let x = 0; x <= 2048; x += 8) {
+      base += (rand() - 0.5) * 7;
+      base = Math.max(120, Math.min(190, x > 1980 ? 160 : base)); // ปิดรอยต่อให้เนียน
+      ctx.lineTo(x, base);
+      if (rand() < 0.16) { // ต้นไม้
+        const h = 14 + rand() * 36, w2 = 5 + rand() * 12;
+        ctx.lineTo(x + w2 * 0.2, base - h * 0.5);
+        ctx.lineTo(x + w2 * 0.45, base - h * 0.3);
+        ctx.lineTo(x + w2 * 0.5, base - h);
+        ctx.lineTo(x + w2 * 0.6, base - h * 0.35);
+        ctx.lineTo(x + w2 * 0.8, base - h * 0.55);
+        ctx.lineTo(x + w2, base);
+      }
+    }
+    ctx.lineTo(2048, 220);
+    ctx.closePath();
+    ctx.fill();
+    const tex = new THREE.CanvasTexture(c);
+    const trees = new THREE.Mesh(
+      new THREE.CylinderGeometry(R * 0.985, R * 0.985, R * 0.1, 96, 1, true),
+      new THREE.MeshBasicMaterial({ map: tex, transparent: true, side: THREE.BackSide, depthWrite: false }),
+    );
+    trees.position.y = R * 0.028;
+    this.group.add(trees);
+
+    // โดมกลางวัน: ฟ้าสว่างเป็นสีฟ้าเมื่อดวงอาทิตย์อยู่เหนือขอบฟ้า
+    this.dayDome = new THREE.Mesh(
+      new THREE.SphereGeometry(R * 1.18, 32, 16),
+      new THREE.MeshBasicMaterial({
+        color: 0x7ab4e8, transparent: true, opacity: 0, side: THREE.BackSide, depthWrite: false,
+      }),
+    );
+    this.group.add(this.dayDome);
   }
 
   /* ── จัดท้องฟ้าตามสถานที่และเวลา ───────────────────────── */
@@ -469,6 +592,19 @@ export class Planetarium {
       sp.sprite.visible = above;
       sp.label.visible = above && this.group.visible;
     });
+
+    // กลางวัน-กลางคืนจริง: ฟ้าสว่างตามมุมเงยดวงอาทิตย์
+    const sunSp = this.skyPlanets.find((s) => s.def.id === 'sun');
+    const sunUp = sunSp.sprite.position.y / (R * 0.95);
+    this.dayFactor = THREE.MathUtils.smoothstep(sunUp, -0.06, 0.22);
+    this.starUniforms.uDay.value = this.dayFactor;
+    // รุ่งเช้า/พลบค่ำเป็นสีส้มทอง → กลางวันฟ้าสด
+    this.dayDome.material.color.lerpColors(
+      new THREE.Color(0xff8a3d), new THREE.Color(0x6fb1ea),
+      THREE.MathUtils.clamp((sunUp - 0.02) / 0.2, 0, 1));
+    this.dayDome.material.opacity = this.dayFactor * 0.88;
+    this.milkyWay.visible = this.dayFactor < 0.5;
+    this.dsos.forEach((d) => { d.sprite.material.opacity = 0.85 * (1 - this.dayFactor); });
   }
 
   /* ── เลือก/ไฮไลต์หมู่ดาว ───────────────────────────────── */

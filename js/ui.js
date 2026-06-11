@@ -142,6 +142,15 @@ export class UI {
       extra.classList.add('hidden');
     }
 
+    // ภาพถ่ายจริง (Hubble/ESO) ถ้ามี
+    const photoBox = $('holo-photo');
+    if (o.photo) {
+      $('holo-photo-img').src = o.photo;
+      photoBox.classList.remove('hidden');
+    } else {
+      photoBox.classList.add('hidden');
+    }
+
     // บทอ่านเจาะลึก (กางอัตโนมัติในโหมดนักเรียน/ผู้เชี่ยวชาญ)
     const article = ARTICLES[id];
     const artBox = $('holo-article');

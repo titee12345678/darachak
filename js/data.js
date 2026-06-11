@@ -840,7 +840,7 @@ export const BRIGHT_STARS = [
 // ── วัตถุท้องฟ้าลึก (Deep Sky Objects) ─────────────────────
 export const DSOS = [
   {
-    id: 'm42', nameTh: 'เนบิวลานายพราน', nameEn: 'Orion Nebula (M42)', read: 'อ่านว่า "โอ-ไร-ออน-เน-บิว-ลา"',
+    id: 'm42', photo: 'img/m42.jpg', nameTh: 'เนบิวลานายพราน', nameEn: 'Orion Nebula (M42)', read: 'อ่านว่า "โอ-ไร-ออน-เน-บิว-ลา"',
     ra: 5.59, dec: -5.39, color: '#ff9eb8', size: 2.2, kind: 'nebula',
     stats: [
       ['ชนิด', 'เนบิวลาเปล่งแสง / แหล่งกำเนิดดาว'],
@@ -851,7 +851,7 @@ export const DSOS = [
     fact: 'คือ "โรงงานผลิตดาวฤกษ์" ที่ใกล้โลกที่สุด ภายในมีดาวเกิดใหม่กว่า 700 ดวง มองเห็นด้วยตาเปล่าเป็นฝ้าจาง ๆ ตรงดาบของนายพราน',
   },
   {
-    id: 'm1', nameTh: 'เนบิวลาปู', nameEn: 'Crab Nebula (M1)', read: 'อ่านว่า "แครบ-เน-บิว-ลา"',
+    id: 'm1', photo: 'img/m1.jpg', nameTh: 'เนบิวลาปู', nameEn: 'Crab Nebula (M1)', read: 'อ่านว่า "แครบ-เน-บิว-ลา"',
     ra: 5.57, dec: 22.01, color: '#9fd8a8', size: 1.0, kind: 'nebula',
     stats: [
       ['ชนิด', 'ซากซูเปอร์โนวา'],
@@ -862,7 +862,7 @@ export const DSOS = [
     fact: 'นักดาราศาสตร์จีนบันทึกการระเบิดครั้งนั้นว่าเป็น "ดาวรับแขก" สว่างจนเห็นกลางวันนานถึง 23 วัน ใจกลางมีพัลซาร์ที่หมุน 30 รอบต่อวินาที!',
   },
   {
-    id: 'horsehead', nameTh: 'เนบิวลาหัวม้า', nameEn: 'Horsehead Nebula', read: 'อ่านว่า "ฮอร์ส-เฮด-เน-บิว-ลา"',
+    id: 'horsehead', photo: 'img/horsehead.jpg', nameTh: 'เนบิวลาหัวม้า', nameEn: 'Horsehead Nebula', read: 'อ่านว่า "ฮอร์ส-เฮด-เน-บิว-ลา"',
     ra: 5.68, dec: -2.46, color: '#d88a6a', size: 1.0, kind: 'dark-nebula',
     stats: [
       ['ชนิด', 'เนบิวลามืด'],
@@ -873,7 +873,7 @@ export const DSOS = [
     fact: 'รูปหัวม้าเกิดจากกลุ่มฝุ่นมืดทึบบังแสงเนบิวลาสีแดงด้านหลัง เหมือนเงาตัดกระดาษบนท้องฟ้า เป็นหนึ่งในภาพถ่ายดาราศาสตร์ที่โด่งดังที่สุด',
   },
   {
-    id: 'pleiades', nameTh: 'กระจุกดาวลูกไก่', nameEn: 'Pleiades (M45)', read: 'อ่านว่า "พลี-อา-ดีส"',
+    id: 'pleiades', photo: 'img/pleiades.jpg', nameTh: 'กระจุกดาวลูกไก่', nameEn: 'Pleiades (M45)', read: 'อ่านว่า "พลี-อา-ดีส"',
     ra: 3.79, dec: 24.12, color: '#aecdff', size: 1.8, kind: 'cluster',
     stats: [
       ['ชนิด', 'กระจุกดาวเปิด'],
@@ -884,7 +884,7 @@ export const DSOS = [
     fact: 'นิทานไทยเล่าว่าลูกไก่เจ็ดตัวกระโดดเข้ากองไฟตามแม่ที่ถูกเชือดเลี้ยงพระ ด้วยความกตัญญูจึงได้ขึ้นไปเป็นดาวบนฟ้า คนตาดีจะนับดาวได้ 6–7 ดวงด้วยตาเปล่า',
   },
   {
-    id: 'omega-cen', nameTh: 'กระจุกดาวทรงกลมโอเมกา เซนทอรี', nameEn: 'Omega Centauri', read: 'อ่านว่า "โอ-เม-กา-เซน-ทอ-รี"',
+    id: 'omega-cen', photo: 'img/omega-cen.jpg', nameTh: 'กระจุกดาวทรงกลมโอเมกา เซนทอรี', nameEn: 'Omega Centauri', read: 'อ่านว่า "โอ-เม-กา-เซน-ทอ-รี"',
     ra: 13.45, dec: -47.48, color: '#ffe9c4', size: 1.4, kind: 'globular',
     stats: [
       ['ชนิด', 'กระจุกดาวทรงกลม — ใหญ่ที่สุดของทางช้างเผือก'],
@@ -895,7 +895,7 @@ export const DSOS = [
     fact: 'ดาว 10 ล้านดวงอัดแน่นเป็นทรงกลม ดาวที่ใจกลางอยู่ใกล้กันมากจนถ้าเราอยู่ที่นั่น ท้องฟ้ายามค่ำจะสว่างไสวด้วยดาวนับแสนดวง',
   },
   {
-    id: 'andromeda', nameTh: 'กาแล็กซีแอนดรอเมดา', nameEn: 'Andromeda Galaxy (M31)', read: 'อ่านว่า "แอน-ดรอ-เม-ดา"',
+    id: 'andromeda', photo: 'img/andromeda.jpg', nameTh: 'กาแล็กซีแอนดรอเมดา', nameEn: 'Andromeda Galaxy (M31)', read: 'อ่านว่า "แอน-ดรอ-เม-ดา"',
     ra: 0.71, dec: 41.27, color: '#cdbdff', size: 2.6, kind: 'galaxy',
     stats: [
       ['ชนิด', 'กาแล็กซีกังหัน'],
@@ -906,7 +906,7 @@ export const DSOS = [
     fact: 'คือวัตถุไกลที่สุดที่มองเห็นได้ด้วยตาเปล่า! และกำลังพุ่งเข้าหาทางช้างเผือกด้วยความเร็ว 110 กม./วินาที — อีก 4,500 ล้านปีจะชนและรวมเป็นกาแล็กซีเดียวกัน',
   },
   {
-    id: 'milkyway', nameTh: 'กาแล็กซีทางช้างเผือก', nameEn: 'Milky Way', read: 'อ่านว่า "มิลค์-กี-เวย์"',
+    id: 'milkyway', photo: 'img/milkyway.jpg', nameTh: 'กาแล็กซีทางช้างเผือก', nameEn: 'Milky Way', read: 'อ่านว่า "มิลค์-กี-เวย์"',
     ra: 18.5, dec: -28, color: '#e8e0ff', size: 3.0, kind: 'milkyway',
     stats: [
       ['ชนิด', 'กาแล็กซีกังหันมีคาน — บ้านของเรา'],

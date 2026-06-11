@@ -554,6 +554,7 @@ function animate() {
     updateDeclutter(dt);
   }
   if (mode === 'sky') {
+    planetarium.update(dt, clock.elapsedTime); // ดาวกะพริบ + ดาวตก
     updateLookTween(dt);
     updateCompass();
   }
