@@ -388,7 +388,6 @@ button { font-family: var(--font-display); cursor: pointer; }
   text-shadow: 0 0 16px rgba(111, 227, 255, .55);
 }
 #holo-en { font-family: var(--font-mono); font-size: 11px; letter-spacing: .26em; color: var(--holo); text-transform: uppercase; }
-#holo-read { font-size: 12px; color: var(--ink-dim); margin-top: 2px; }
 
 .holo-actions { display: flex; gap: 8px; margin-bottom: 14px; }
 .holo-actions button {

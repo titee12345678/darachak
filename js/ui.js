@@ -58,7 +58,6 @@ export class UI {
 
     $('holo-name').textContent = o.nameTh;
     $('holo-en').textContent = o.nameEn;
-    $('holo-read').textContent = o.read || '';
 
     // ไอคอนดาว: ภาพพื้นผิวจริง (ถ้ามี) + แสงเงาทรงกลม / สำรองเป็นไล่สี
     const glyph = $('holo-glyph');
