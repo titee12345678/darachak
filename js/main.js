@@ -254,8 +254,14 @@ function updateFocus(dt) {
     fly.t += dt / 1.5;
     const k = Math.min(1, fly.t);
     const e = 1 - Math.pow(1 - k, 3); // easeOutCubic
-    // ปลายทาง: ค้างทิศเข้าหาดาวตามตำแหน่งเริ่ม แต่ตามดาวที่เคลื่อนอยู่
-    _v2.subVectors(fly.fromPos, _v1).normalize();
+    // ปลายทาง: จอดฝั่งสว่างเสมอ — เข้าหาจากทิศดวงอาทิตย์ เฉียงขึ้นเล็กน้อย
+    if (focusId === 'sun') {
+      _v2.subVectors(fly.fromPos, _v1).normalize(); // ดวงอาทิตย์สว่างทุกด้าน
+    } else {
+      _v2.copy(_v1).multiplyScalar(-1).normalize(); // ทิศจากดาวไปดวงอาทิตย์
+      _v2.y += 0.32;
+      _v2.normalize();
+    }
     const endPos = _v2.multiplyScalar(fly.want).add(_v1);
     camera.position.lerpVectors(fly.fromPos, endPos, e);
     aimPoint(_v1, fly.want, _aim);
