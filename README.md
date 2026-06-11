@@ -39,4 +39,10 @@ python3 -m http.server 5556
 
 ## เทคโนโลยี
 
-Three.js 0.160 · Procedural textures (seeded value-noise fBm) · CSS2DRenderer สำหรับป้ายชื่อไทย · ไม่มี dependency อื่น
+Three.js 0.160 · แผนที่ดาวจริงความละเอียด 2K · CSS2DRenderer สำหรับป้ายชื่อไทย · ไม่มี dependency อื่น
+
+## เครดิตภาพพื้นผิวดาว
+
+- แผนที่ดาวเคราะห์/ดวงจันทร์/ดวงอาทิตย์: [Solar System Scope Textures](https://www.solarsystemscope.com/textures/) (CC BY 4.0, อ้างอิงข้อมูลภาพถ่ายจาก NASA)
+- Earth normal/specular maps: [three.js examples](https://threejs.org/) (MIT)
+- ดาวพลูโตและฉากหลังอวกาศ: procedural generation (seeded value-noise fBm)

@@ -414,7 +414,7 @@ function animate() {
   requestAnimationFrame(animate);
   const dt = Math.min(clock.getDelta(), 0.05);
   if (solar && mode === 'solar') {
-    solar.update(paused ? 0 : dt, paused ? 0 : daysPerSec());
+    solar.update(paused ? 0 : dt, paused ? 0 : daysPerSec(), camera);
     updateFocus(dt);
   }
   if (mode === 'sky') {

@@ -14,6 +14,37 @@ import { ValueNoise } from './noise.js';
 
 const ORBIT_COLOR = 0x7fd4ff;
 
+/* ── แผนที่ดาวจริง (NASA imagery / Solar System Scope, CC BY 4.0) ──
+   โหลดจากโฟลเดอร์ textures/ — ถ้าโหลดไม่ได้จะ fallback เป็น procedural */
+const texLoader = new THREE.TextureLoader();
+function realTex(file, fallbackFactory = null, { srgb = true, onLoad = null } = {}) {
+  const t = texLoader.load(
+    `textures/${file}`,
+    onLoad || undefined,
+    undefined,
+    () => {
+      if (!fallbackFactory) return;
+      const f = fallbackFactory();
+      t.image = f.image;
+      t.needsUpdate = true;
+    },
+  );
+  if (srgb) t.colorSpace = THREE.SRGBColorSpace;
+  t.anisotropy = 8;
+  return t;
+}
+
+const REAL_MAPS = {
+  mercury: '2k_mercury.jpg',
+  venus: '2k_venus_atmosphere.jpg',
+  mars: '2k_mars.jpg',
+  jupiter: '2k_jupiter.jpg',
+  saturn: '2k_saturn.jpg',
+  uranus: '2k_uranus.jpg',
+  neptune: '2k_neptune.jpg',
+  ceres: '2k_ceres_fictional.jpg',
+};
+
 /* noise canvas → DataTexture สำหรับ shader ดวงอาทิตย์ */
 function noiseDataTexture(seed, size = 256) {
   const n = new ValueNoise(seed);
@@ -68,6 +99,7 @@ export class SolarSystem {
     this.labels = [];
     this.simDays = 0;
     this.elapsed = 0;
+    this.earthSunDir = { value: new THREE.Vector3(1, 0, 0) }; // ทิศดวงอาทิตย์ (view space) สำหรับไฟเมืองกลางคืน
     scene.add(this.group);
 
     this._buildSun();
@@ -83,6 +115,7 @@ export class SolarSystem {
     this.sunUniforms = {
       uTime: { value: 0 },
       uNoise: { value: noiseTex },
+      uSunTex: { value: realTex('2k_sun.jpg') },
     };
     const mat = new THREE.ShaderMaterial({
       uniforms: this.sunUniforms,
@@ -96,7 +129,7 @@ export class SolarSystem {
           gl_Position = projectionMatrix * mv;
         }`,
       fragmentShader: /* glsl */`
-        uniform float uTime; uniform sampler2D uNoise;
+        uniform float uTime; uniform sampler2D uNoise; uniform sampler2D uSunTex;
         varying vec2 vUv; varying vec3 vNormal; varying vec3 vView;
         void main() {
           // เพลาสมาไหลวน: ซ้อน noise สองชั้นเลื่อนสวนทางกัน
@@ -105,17 +138,14 @@ export class SolarSystem {
           float n1 = texture2D(uNoise, uv1).r;
           float n2 = texture2D(uNoise, uv2).r;
           float n = n1 * 0.6 + n2 * 0.4;
-          n = pow(n, 1.5);
           // granulation เม็ดเล็ก
           float g = texture2D(uNoise, vUv * 14.0 + n * 0.35 + uTime * 0.002).r;
-          n = n * 0.8 + g * 0.2;
-          vec3 deep = vec3(0.55, 0.08, 0.0);
-          vec3 mid  = vec3(1.0, 0.42, 0.02);
-          vec3 hot  = vec3(1.0, 0.86, 0.45);
-          vec3 white= vec3(1.0, 0.98, 0.88);
-          vec3 col = mix(deep, mid, smoothstep(0.15, 0.5, n));
-          col = mix(col, hot, smoothstep(0.5, 0.78, n));
-          col = mix(col, white, smoothstep(0.78, 0.97, n));
+          // ภาพถ่ายดวงอาทิตย์จริง บิดด้วย noise ให้พื้นผิวไหลวน
+          vec2 distort = vec2(n1 - 0.5, n2 - 0.5) * 0.045;
+          vec3 base = texture2D(uSunTex, vUv + distort).rgb;
+          vec3 col = base * (0.8 + n * 0.55 + g * 0.25);
+          // จุดร้อนเรืองขาว
+          col += vec3(1.0, 0.85, 0.55) * pow(max(n * 0.7 + g * 0.3, 0.0), 4.0) * 0.5;
           // ขอบดวงมืดลง (limb darkening)
           float limb = dot(vNormal, vView);
           col *= 0.55 + 0.45 * smoothstep(0.0, 0.7, limb);
@@ -164,10 +194,11 @@ export class SolarSystem {
   }
 
   _buildLight() {
-    const sunLight = new THREE.PointLight(0xfff2dd, 2600, 0, 1.9);
+    // แสงขาวกลาง เพื่อให้สีจากแผนที่ดาวจริงตรงเป๊ะ ไม่อมเหลือง/ฟ้า
+    const sunLight = new THREE.PointLight(0xffffff, 2600, 0, 1.9);
     sunLight.position.set(0, 0, 0);
     this.group.add(sunLight);
-    this.group.add(new THREE.AmbientLight(0x223344, 1.1));
+    this.group.add(new THREE.AmbientLight(0x3a3f47, 0.9));
   }
 
   /* ── ดาวเคราะห์ทั้ง 8 + ดาวเคราะห์แคระ ────────────────── */
@@ -178,18 +209,44 @@ export class SolarSystem {
       let material, extras = {};
 
       if (p.tex.kind === 'earth') {
-        const { map, bumpMap, specularMap } = earthTextures(seed);
+        // โลกจริง: แผนที่กลางวัน + ไฟเมืองกลางคืน + ภูเขา (normal) + ผิวน้ำสะท้อน (specular)
         material = new THREE.MeshPhongMaterial({
-          map, bumpMap, bumpScale: 3.2, specularMap,
-          specular: new THREE.Color(0x668899), shininess: 22,
+          map: realTex('2k_earth_daymap.jpg', () => earthTextures(seed).map),
+          normalMap: realTex('earth_normal_2048.jpg', null, { srgb: false }),
+          normalScale: new THREE.Vector2(0.85, 0.85),
+          specularMap: realTex('earth_specular_2048.jpg', null, { srgb: false }),
+          specular: new THREE.Color(0x555555), shininess: 26,
+          emissive: new THREE.Color(0xffffff), emissiveIntensity: 0,
+          emissiveMap: realTex('2k_earth_nightmap.jpg', null, {
+            onLoad: () => { material.emissiveIntensity = 1; },
+          }),
         });
-      } else if (p.tex.kind === 'venus') {
-        material = new THREE.MeshPhongMaterial({ map: venusTexture(seed), shininess: 4 });
-      } else if (['jupiter', 'saturn', 'uranus', 'neptune'].includes(p.tex.kind)) {
-        material = new THREE.MeshPhongMaterial({ map: gasGiantTexture(seed, p.tex.kind), shininess: 6 });
+        // โชว์ไฟเมืองเฉพาะฝั่งกลางคืน
+        const sunDir = this.earthSunDir;
+        material.onBeforeCompile = (shader) => {
+          shader.uniforms.uSunDirView = sunDir;
+          shader.fragmentShader = ('uniform vec3 uSunDirView;\n' + shader.fragmentShader).replace(
+            '#include <emissivemap_fragment>',
+            `#include <emissivemap_fragment>
+            float dayF = smoothstep(-0.1, 0.22, dot(normalize(vNormal), uSunDirView));
+            totalEmissiveRadiance *= (1.0 - dayF) * 1.6;`,
+          );
+        };
+      } else if (REAL_MAPS[p.id]) {
+        const fallback = p.tex.kind === 'venus'
+          ? () => venusTexture(seed)
+          : ['jupiter', 'saturn', 'uranus', 'neptune'].includes(p.tex.kind)
+            ? () => gasGiantTexture(seed, p.tex.kind)
+            : () => rockyTexture(seed, p.tex.base, p.tex.craters || 100, p.id === 'mars');
+        const map = realTex(REAL_MAPS[p.id], fallback);
+        const rocky = ['mercury', 'mars', 'ceres'].includes(p.id);
+        material = new THREE.MeshPhongMaterial({
+          map, shininess: rocky ? 2 : 6,
+          ...(rocky ? { bumpMap: map, bumpScale: 0.045 } : {}),
+        });
       } else {
         material = new THREE.MeshPhongMaterial({
-          map: rockyTexture(seed, p.tex.base, p.tex.craters || 100, p.id === 'mars'),
+          map: rockyTexture(seed, p.tex.base, p.tex.craters || 100, false),
           shininess: 2,
         });
       }
@@ -219,7 +276,9 @@ export class SolarSystem {
           uv.setXY(i, (v3.length() - inner) / (outer - inner), 0.5);
         }
         const ringMat = new THREE.MeshBasicMaterial({
-          map: ringTexture(seed + 5, !!p.rings.faint),
+          map: p.id === 'saturn'
+            ? realTex('2k_saturn_ring_alpha.png', () => ringTexture(seed + 5, false))
+            : ringTexture(seed + 5, !!p.rings.faint),
           side: THREE.DoubleSide, transparent: true, depthWrite: false,
         });
         const ring = new THREE.Mesh(ringGeo, ringMat);
@@ -239,7 +298,10 @@ export class SolarSystem {
       if (p.id === 'earth') {
         const clouds = new THREE.Mesh(
           new THREE.SphereGeometry(p.radius * 1.018, 64, 32),
-          new THREE.MeshPhongMaterial({ map: cloudTexture(seed + 9), transparent: true, depthWrite: false }),
+          new THREE.MeshPhongMaterial({
+            color: 0xffffff, transparent: true, depthWrite: false, opacity: 0.95,
+            alphaMap: realTex('2k_earth_clouds.jpg', () => cloudTexture(seed + 9), { srgb: false }),
+          }),
         );
         tiltGroup.add(clouds);
         extras.clouds = clouds;
@@ -261,12 +323,11 @@ export class SolarSystem {
         tiltGroup.add(atmo);
 
         // ดวงจันทร์
+        const moonMap = realTex('2k_moon.jpg',
+          () => rockyTexture(seed + 21, ['#b8b8b4', '#8e8e8a', '#d2d2cf', '#6f6f6b'], 200));
         const moonMesh = new THREE.Mesh(
           new THREE.SphereGeometry(EARTH_MOON.radius, 32, 16),
-          new THREE.MeshPhongMaterial({
-            map: rockyTexture(seed + 21, ['#b8b8b4', '#8e8e8a', '#d2d2cf', '#6f6f6b'], 200),
-            shininess: 1,
-          }),
+          new THREE.MeshPhongMaterial({ map: moonMap, bumpMap: moonMap, bumpScale: 0.02, shininess: 1 }),
         );
         moonMesh.userData.info = EARTH_MOON;
         const moonPivot = new THREE.Group();
@@ -417,11 +478,21 @@ export class SolarSystem {
   }
 
   /* ── อัปเดตทุกเฟรม ─────────────────────────────────────── */
-  update(dt, daysPerSec) {
+  update(dt, daysPerSec, camera = null) {
     this.elapsed += dt;
     this.simDays += dt * daysPerSec;
     const t = this.simDays;
     this.sunUniforms.uTime.value = this.elapsed;
+
+    // ทิศดวงอาทิตย์ใน view space → ไฟเมืองโชว์เฉพาะฝั่งกลางคืนของโลก
+    if (camera) {
+      const earth = this.bodies.find((b) => b.info.id === 'earth');
+      if (earth) {
+        earth.mesh.getWorldPosition(this._earthPos ??= new THREE.Vector3());
+        this.earthSunDir.value.copy(this._earthPos).multiplyScalar(-1)
+          .transformDirection(camera.matrixWorldInverse);
+      }
+    }
 
     // ดาวเคราะห์โคจร + หมุนรอบตัวเอง
     for (const b of this.bodies) {
