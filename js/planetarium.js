@@ -383,22 +383,21 @@ export class Planetarium {
       ctx.fillStyle = gg;
       ctx.fillRect(x - r, y - r, r * 2, r * 2);
     }
-    // ใบหญ้าตั้ง ๆ แน่น ๆ แบบสนามหญ้า (เบลอบางให้เนียน)
-    ctx.filter = 'blur(0.4px)';
-    for (let i = 0; i < 14000; i++) {
+    // ใบหญ้าตั้ง ๆ แน่น ๆ แบบสนามหญ้า (วาดคม — เบลอรวมตอนท้ายครั้งเดียว)
+    for (let i = 0; i < 8000; i++) {
       const x = rand() * S, y = rand() * S;
       const len = 4 + rand() * 7;
       const lean = (rand() - 0.5) * 3.5;
       const green = 58 + rand() * 72;
-      ctx.strokeStyle = `rgba(${green * 0.42}, ${green}, ${green * 0.38}, ${0.10 + rand() * 0.14})`;
-      ctx.lineWidth = 0.8 + rand() * 0.8;
+      ctx.strokeStyle = `rgba(${green * 0.42}, ${green}, ${green * 0.38}, ${0.11 + rand() * 0.15})`;
+      ctx.lineWidth = 0.9 + rand() * 0.9;
       ctx.beginPath();
       ctx.moveTo(x, y);
       ctx.quadraticCurveTo(x + lean * 0.4, y - len * 0.6, x + lean, y - len);
       ctx.stroke();
     }
     // ปลายใบรับแสงจาง ๆ ให้มีมิติ
-    for (let i = 0; i < 2200; i++) {
+    for (let i = 0; i < 1400; i++) {
       const x = rand() * S, y = rand() * S;
       const green = 110 + rand() * 70;
       ctx.strokeStyle = `rgba(${green * 0.5}, ${green}, ${green * 0.42}, ${0.10 + rand() * 0.1})`;
@@ -408,6 +407,9 @@ export class Planetarium {
       ctx.lineTo(x + (rand() - 0.5) * 2, y - 3 - rand() * 4);
       ctx.stroke();
     }
+    // เบลอเนียนทั้งภาพ "ครั้งเดียว" — เร็วกว่าเบลอทีละเส้นหลายพันเท่า
+    ctx.filter = 'blur(0.5px)';
+    ctx.drawImage(c, 0, 0);
     ctx.filter = 'none';
     const tex = new THREE.CanvasTexture(c);
     tex.colorSpace = THREE.SRGBColorSpace;
