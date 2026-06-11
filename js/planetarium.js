@@ -366,7 +366,7 @@ export class Planetarium {
 
   /* ── พื้นหญ้าแบบนิ่ง (วาดครั้งเดียว ไม่กินสเปคขณะเล่น) ──── */
   _grassTexture() {
-    const S = 512;
+    const S = 384; // เล็กลงแต่ tile ถี่เท่าเดิม — ความหนาแน่นใบหญ้าต่อพื้นที่คงเดิม
     const c = document.createElement('canvas');
     c.width = c.height = S;
     const ctx = c.getContext('2d');
@@ -384,9 +384,9 @@ export class Planetarium {
       ctx.fillRect(x - r, y - r, r * 2, r * 2);
     }
     // ใบหญ้าตั้ง ๆ แน่น ๆ แบบสนามหญ้า (วาดคม — เบลอรวมตอนท้ายครั้งเดียว)
-    for (let i = 0; i < 8000; i++) {
+    for (let i = 0; i < 4600; i++) {
       const x = rand() * S, y = rand() * S;
-      const len = 4 + rand() * 7;
+      const len = 3 + rand() * 5.5;
       const lean = (rand() - 0.5) * 3.5;
       const green = 58 + rand() * 72;
       ctx.strokeStyle = `rgba(${green * 0.42}, ${green}, ${green * 0.38}, ${0.11 + rand() * 0.15})`;
@@ -397,7 +397,7 @@ export class Planetarium {
       ctx.stroke();
     }
     // ปลายใบรับแสงจาง ๆ ให้มีมิติ
-    for (let i = 0; i < 1400; i++) {
+    for (let i = 0; i < 800; i++) {
       const x = rand() * S, y = rand() * S;
       const green = 110 + rand() * 70;
       ctx.strokeStyle = `rgba(${green * 0.5}, ${green}, ${green * 0.42}, ${0.10 + rand() * 0.1})`;

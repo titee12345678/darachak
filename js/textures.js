@@ -259,9 +259,10 @@ export function ringTexture(seed, faint = false) {
   return canvasTexture(c);
 }
 
-/* ── ฉากหลังอวกาศลึก: ทางช้างเผือก + เนบิวลา (equirect) ── */
+/* ── ฉากหลังอวกาศลึก: ทางช้างเผือก + เนบิวลา (equirect) ──
+   1024×512 พอ — เป็นพื้นหลังฟุ้งถูกยืดเบลออยู่แล้ว แต่เร็วขึ้น 4 เท่า */
 export function deepSpaceTexture() {
-  const W = 2048, H = 1024;
+  const W = 1024, H = 512;
   const [c, ctx] = makeCanvas(W, H);
   const noise = new ValueNoise(4242);
   ctx.fillStyle = '#01020a';
@@ -304,7 +305,7 @@ export function deepSpaceTexture() {
   }
 
   // ดาวฝุ่นเล็ก ๆ ฝังในพื้นหลัง
-  for (let i = 0; i < 3500; i++) {
+  for (let i = 0; i < 1800; i++) {
     const x = rand() * W, y = rand() * H;
     const b = rand();
     ctx.fillStyle = `rgba(${200 + b * 55},${200 + b * 55},255,${0.1 + b * 0.5})`;
@@ -327,8 +328,9 @@ export function glowSprite(colorInner = '#ffffff', colorOuter = 'rgba(150,180,25
   return canvasTexture(c);
 }
 
-/* ── sprite เนบิวลาฟุ้ง (สำหรับ DSO ในท้องฟ้าจำลอง) ────── */
-export function nebulaSprite(hex, seed = 5, size = 256) {
+/* ── sprite เนบิวลาฟุ้ง (สำหรับ DSO ในท้องฟ้าจำลอง)
+   128px พอ — เป็นแสงฟุ้งไร้ขอบคม แต่สร้างเร็วขึ้น 4 เท่า ────── */
+export function nebulaSprite(hex, seed = 5, size = 128) {
   const [c, ctx] = makeCanvas(size, size);
   const noise = new ValueNoise(seed);
   const [r, g, b] = hexToRgb(hex);
