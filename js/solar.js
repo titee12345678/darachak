@@ -5,7 +5,7 @@
    ═══════════════════════════════════════════════════════════ */
 import * as THREE from 'three';
 import { CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
-import { SUN, PLANETS, DWARF_PLANETS, COMET, EARTH_MOON } from './data.js';
+import { SUN, PLANETS, DWARF_PLANETS, COMET, EARTH_MOON, MAJOR_MOONS } from './data.js';
 import {
   rockyTexture, venusTexture, earthTextures, cloudTexture,
   gasGiantTexture, ringTexture, glowSprite,
@@ -351,22 +351,28 @@ export class SolarSystem {
         this.bodies.push({ info: EARTH_MOON, mesh: moonMesh, isMoon: true });
       }
 
-      // ดวงจันทร์กาลิเลียนของดาวพฤหัสบดี + ไททันของดาวเสาร์ (จุดเล็ก ๆ)
+      // ดวงจันทร์บริวารเด่น (กาลิเลียน 4 ดวง + ไททัน) — คลิกดูข้อมูลได้
       if (p.id === 'jupiter' || p.id === 'saturn') {
-        const moons = p.id === 'jupiter'
-          ? [[1.45, 0.09], [1.8, 0.08], [2.2, 0.13], [2.7, 0.12]]
-          : [[3.1, 0.13]];
-        extras.miniMoons = moons.map(([dm, rm], k) => {
+        const dists = p.id === 'jupiter' ? [1.45, 1.8, 2.2, 2.7] : [3.1];
+        const moons = MAJOR_MOONS.filter((m) => m.parent === p.id);
+        extras.miniMoons = moons.map((mInfo) => {
           const piv = new THREE.Group();
           const mm = new THREE.Mesh(
-            new THREE.SphereGeometry(rm, 12, 8),
-            new THREE.MeshPhongMaterial({ color: 0xbfb9ae }),
+            new THREE.SphereGeometry(mInfo.radius, 16, 10),
+            new THREE.MeshPhongMaterial({ color: new THREE.Color(mInfo.color) }),
           );
-          mm.position.set(p.radius * dm, 0, 0);
+          mm.userData.info = mInfo;
+          mm.position.set(p.radius * dists[mInfo.orbitIndex], 0, 0);
           piv.add(mm);
-          piv.rotation.y = k * 1.7;
           holder.add(piv);
-          return { piv, speed: 0.7 / (k + 1) };
+          this.pickables.push(mm);
+          this.bodies.push({ info: mInfo, mesh: mm, isMoon: true });
+          const ml = makeLabel(mInfo.nameTh, '', 'obj-label', () => this.onPick(mInfo.id));
+          ml.userData.pri = 95; // โชว์เมื่อซูมใกล้เท่านั้น (declutter)
+          ml.position.set(0, mInfo.radius + 0.35, 0);
+          mm.add(ml);
+          this.labels.push(ml);
+          return { piv, period: mInfo.period, phase: mInfo.orbitIndex * 1.7 };
         });
       }
 
@@ -510,7 +516,10 @@ export class SolarSystem {
       } else {
         b.mesh.rotation.y += dt * daysPerSec * b.rotSpeed * Math.PI * 2;
       }
-      if (b.extras.miniMoons) b.extras.miniMoons.forEach((m) => { m.piv.rotation.y += dt * daysPerSec * m.speed * 4; });
+      // ดวงจันทร์บริวาร: โคจรตามคาบจริงของแต่ละดวง
+      if (b.extras.miniMoons) b.extras.miniMoons.forEach((m) => {
+        m.piv.rotation.y = m.phase + (t / m.period) * Math.PI * 2;
+      });
     }
 
     // แถบดาวเคราะห์น้อย (คาบเฉลี่ย ~4.6 ปีของซีรีส)

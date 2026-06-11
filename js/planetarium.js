@@ -9,6 +9,7 @@ import { CONSTELLATIONS, BRIGHT_STARS, DSOS } from './data.js';
 import { glowSprite, nebulaSprite } from './textures.js';
 import { mulberry32 } from './noise.js';
 import { daysSinceJ2000, helio, moonGeo, eclipticToRaDec } from './ephemeris.js';
+import { STAR_CATALOG } from './stars-catalog.js';
 
 const R = 480; // รัศมีโดมท้องฟ้า
 
@@ -41,6 +42,8 @@ function radecToHorizon(raH, decDeg, lstH, latDeg, out) {
 const ART_EMOJI = {
   hunter: '🏹', bear: '🐻', scorpion: '🦂', lion: '🦁', twins: '🧑‍🤝‍🧑',
   bull: '🐂', archer: '🏹', queen: '👑', cross: '✦', lyre: '🪕', swan: '🦢',
+  ram: '🐏', crab: '🦀', maiden: '👧', scales: '⚖️', seagoat: '🐐',
+  waterbearer: '🏺', fish: '🐟',
 };
 
 function emojiSprite(emoji) {
@@ -84,26 +87,31 @@ export class Planetarium {
     this.setVisible(false);
   }
 
-  /* ── ดาวพื้นหลัง 6,000 ดวง (พิกัดศูนย์สูตรฟ้าแบบสุ่ม) ──── */
+  /* ── ดาวพื้นหลัง: ดาวจริง 8,404 ดวงจาก Yale Bright Star Catalog ──
+     ขนาดตามความสว่างจริง (magnitude) สีตามอุณหภูมิผิวดาวจริง */
   _buildBackgroundStars() {
-    const COUNT = 6000;
-    const rand = mulberry32(99);
+    const COUNT = STAR_CATALOG.length;
     this.bgEq = []; // [ra, dec]
     const pos = new Float32Array(COUNT * 3);
     const col = new Float32Array(COUNT * 3);
     const size = new Float32Array(COUNT);
     const color = new THREE.Color();
+    const tempToColor = (t) => { // เคลวิน → สีดาว (ประมาณ blackbody)
+      if (t < 3700) color.setRGB(1, 0.62, 0.4);        // M แดงส้ม
+      else if (t < 5200) color.setRGB(1, 0.8, 0.58);   // K ส้ม
+      else if (t < 6000) color.setRGB(1, 0.94, 0.82);  // G เหลือง
+      else if (t < 7500) color.setRGB(1, 0.98, 0.94);  // F ขาวเหลือง
+      else if (t < 10000) color.setRGB(0.93, 0.95, 1); // A ขาว
+      else color.setRGB(0.76, 0.86, 1);                // B/O ฟ้า
+    };
     for (let i = 0; i < COUNT; i++) {
-      const ra = rand() * 24;
-      const dec = THREE.MathUtils.radToDeg(Math.asin(rand() * 2 - 1));
+      const [ra, dec, mag, t100] = STAR_CATALOG[i];
       this.bgEq.push([ra, dec]);
-      const k = rand();
-      if (k < 0.1) color.setHSL(0.07, 0.7, 0.8);
-      else if (k < 0.25) color.setHSL(0.13, 0.4, 0.85);
-      else if (k < 0.55) color.setHSL(0.6, 0.4, 0.88);
-      else color.setHSL(0, 0, 0.92);
-      col[i * 3] = color.r; col[i * 3 + 1] = color.g; col[i * 3 + 2] = color.b;
-      size[i] = Math.pow(rand(), 2.6) * 4.4 + 0.7;
+      tempToColor(t100 * 100);
+      // ดาวจางลดความสว่างผ่านสี (additive blending = คูณสีเหมือนคูณ alpha)
+      const lum = THREE.MathUtils.clamp(1.25 - mag * 0.16, 0.18, 1);
+      col[i * 3] = color.r * lum; col[i * 3 + 1] = color.g * lum; col[i * 3 + 2] = color.b * lum;
+      size[i] = THREE.MathUtils.clamp(7.2 - mag * 1.0, 1.1, 10);
     }
     const geo = new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));

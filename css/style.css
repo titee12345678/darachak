@@ -418,7 +418,13 @@ button { font-family: var(--font-display); cursor: pointer; }
 #holo-stats .row:nth-child(4) { animation-delay: .15s; } #holo-stats .row:nth-child(5) { animation-delay: .2s; }
 #holo-stats .row:nth-child(6) { animation-delay: .25s; } #holo-stats .row:nth-child(7) { animation-delay: .3s; }
 @keyframes stat-in { from { opacity: 0; transform: translateX(18px); } }
-#holo-stats dt { font-size: 12px; color: var(--ink-dim); white-space: nowrap; }
+#holo-stats dt { font-size: 12px; color: var(--ink-dim); }
+#holo-stats dt input {
+  width: 52px; background: rgba(8, 24, 40, .9); color: var(--amber);
+  border: 1px solid var(--holo-dim); border-radius: 4px;
+  font-family: var(--font-mono); font-size: 12px; text-align: center;
+  padding: 2px 3px; margin: 0 2px;
+}
 #holo-stats dd { font-family: var(--font-mono); font-size: 13px; color: var(--ink); text-align: right; }
 #holo-stats dd b { color: var(--amber); font-weight: 600; }
 

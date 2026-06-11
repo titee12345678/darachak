@@ -95,6 +95,26 @@ export function moonGeo(d) {
   }; // unit vector geocentric ecliptic
 }
 
+/* ── เฟสดวงจันทร์ ณ เวลา d ───────────────────────────────── */
+export function moonPhase(d) {
+  const D = (((297.8501921 + 12.19074912 * d) % 360) + 360) % 360; // มุมห่างจากดวงอาทิตย์
+  const illum = (1 - Math.cos(D * DEG)) / 2;       // สัดส่วนส่วนสว่าง 0..1
+  const age = (D / 360) * 29.530588;               // อายุจันทร์ (วัน)
+  const waxing = D < 180;                           // ข้างขึ้น?
+  let name, emoji;
+  if (illum < 0.03) { name = 'เดือนมืด (New Moon)'; emoji = '🌑'; }
+  else if (illum < 0.35) { name = waxing ? 'จันทร์เสี้ยวข้างขึ้น' : 'จันทร์เสี้ยวข้างแรม'; emoji = waxing ? '🌒' : '🌘'; }
+  else if (illum < 0.65) { name = waxing ? 'จันทร์ครึ่งดวง (ข้างขึ้น)' : 'จันทร์ครึ่งดวง (ข้างแรม)'; emoji = waxing ? '🌓' : '🌗'; }
+  else if (illum < 0.97) { name = waxing ? 'จันทร์ค่อนดวง (ข้างขึ้น)' : 'จันทร์ค่อนดวง (ข้างแรม)'; emoji = waxing ? '🌔' : '🌖'; }
+  else { name = 'จันทร์เต็มดวง (Full Moon)'; emoji = '🌕'; }
+  // ขึ้น/แรม กี่ค่ำ (ประมาณจากอายุจันทร์)
+  const day = waxing
+    ? Math.min(15, Math.max(1, Math.round(age)))
+    : Math.min(15, Math.max(1, Math.round(age - 14.765)));
+  const thaiDay = `${waxing ? 'ขึ้น' : 'แรม'} ${day} ค่ำ`;
+  return { illum, age, waxing, name, emoji, thaiDay };
+}
+
 /* ── ดาวหางฮัลเลย์: elements จริง (perihelion 9 ก.พ. 1986) ── */
 const HALLEY = {
   a: 17.834, e: 0.96714, I: 162.262 * DEG,

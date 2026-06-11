@@ -3,8 +3,9 @@
    ═══════════════════════════════════════════════════════════ */
 import {
   SUN, PLANETS, DWARF_PLANETS, COMET, EARTH_MOON, ASTEROID_BELT_INFO,
-  CONSTELLATIONS, BRIGHT_STARS, DSOS,
+  MAJOR_MOONS, CONSTELLATIONS, BRIGHT_STARS, DSOS,
 } from './data.js';
+import { daysSinceJ2000, moonPhase } from './ephemeris.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -20,7 +21,7 @@ const GLYPH_POS = { earth: '74% 42%', jupiter: '64% 55%', mars: '20% 50%' };
 
 /* รวม object ทุกชนิดเข้า registry เดียว ค้นด้วย id */
 export const REGISTRY = new Map();
-[SUN, ...PLANETS, ...DWARF_PLANETS, COMET, EARTH_MOON, ASTEROID_BELT_INFO].forEach((o) => REGISTRY.set(o.id, { ...o, world: 'solar' }));
+[SUN, ...PLANETS, ...DWARF_PLANETS, COMET, EARTH_MOON, ASTEROID_BELT_INFO, ...MAJOR_MOONS].forEach((o) => REGISTRY.set(o.id, { ...o, world: 'solar' }));
 CONSTELLATIONS.forEach((c) => REGISTRY.set(c.id, { ...c, world: 'sky', kind: 'constellation' }));
 BRIGHT_STARS.forEach((s) => REGISTRY.set(s.id, { ...s, world: 'sky', kind: 'star' }));
 DSOS.forEach((d) => REGISTRY.set(d.id, { ...d, world: 'sky', kind: 'dso' }));
@@ -75,7 +76,7 @@ export class UI {
     }
     glyph.classList.toggle('ringed', !!o.rings);
 
-    // สถิติ: โหมดเด็กตัดเหลือ 4 แถวแรก / โหมดอื่นแสดงครบ
+    // สถิติ: เด็กเห็นแถวหลัก / นักเรียน-ผู้เชี่ยวชาญเห็นข้อมูลเชิงลึก (statsX) เพิ่ม
     let rows = [];
     if (o.kind === 'constellation') {
       rows = [
@@ -85,11 +86,38 @@ export class UI {
       ];
     } else if (o.stats) {
       rows = o.stats.slice();
+      if (this.level !== 'kid' && o.statsX) rows = rows.concat(o.statsX);
     }
     if (this.level === 'kid') rows = rows.slice(0, 4);
+
+    // ดวงจันทร์: เฟสจริง ณ ตอนนี้ (คำนวณสด)
+    if (id === 'moon') {
+      const ph = moonPhase(daysSinceJ2000(new Date()));
+      rows.unshift(
+        ['เฟสคืนนี้', `${ph.emoji} <b>${ph.name}</b>`],
+        ['จันทรคติไทย', `<b>${ph.thaiDay}</b> · สว่าง ${Math.round(ph.illum * 100)}%`],
+      );
+    }
+
+    // เครื่องคิดน้ำหนักบนดาว
+    if (o.gravity) {
+      const w = +localStorage.getItem('userWeight') || 30;
+      rows.push(['น้ำหนักตัว <input id="weight-in" type="number" value="' + w + '" min="1" max="500"> กก. ที่นี่หนัก',
+        `<b id="weight-out">${(w * o.gravity).toFixed(1)}</b> กก.`]);
+    }
+
     $('holo-stats').innerHTML = rows
       .map(([k, v2]) => `<div class="row"><dt>${k}</dt><dd>${v2}</dd></div>`)
       .join('');
+
+    const wIn = $('weight-in');
+    if (wIn) {
+      wIn.addEventListener('input', () => {
+        const w = Math.max(0, +wIn.value || 0);
+        localStorage.setItem('userWeight', w);
+        $('weight-out').textContent = (w * o.gravity).toFixed(1);
+      });
+    }
 
     // เกร็ดความรู้ตามระดับ
     let fact = o.fact || o.info || '';
@@ -174,8 +202,10 @@ export class UI {
       add(REGISTRY.get('sun'));
       group('ดาวเคราะห์ 8 ดวง');
       PLANETS.forEach((p) => add(p));
+      group('ดวงจันทร์เด่น');
+      add(REGISTRY.get('moon'), 'ของโลก');
+      MAJOR_MOONS.forEach((m) => add(m, m.parent === 'jupiter' ? 'พฤหัสฯ' : 'เสาร์'));
       group('อื่น ๆ');
-      add(REGISTRY.get('moon'));
       add(REGISTRY.get('belt'));
       DWARF_PLANETS.forEach((p) => add(p, 'แคระ'));
       add(REGISTRY.get('comet'));
