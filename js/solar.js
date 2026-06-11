@@ -589,7 +589,13 @@ export class SolarSystem {
     this._labelOrder ??= [...this.labels].sort(
       (a, b) => (a.userData.pri ?? 50) - (b.userData.pri ?? 50));
     for (const l of this._labelOrder) {
-      l.getWorldPosition(v).project(camera);
+      l.getWorldPosition(v);
+      // ป้ายดวงจันทร์บริวาร (pri ≥ 90) โชว์เฉพาะตอนกล้องซูมเข้าใกล้
+      if ((l.userData.pri ?? 50) >= 90 && v.distanceTo(camera.position) > 28) {
+        l.visible = false;
+        continue;
+      }
+      v.project(camera);
       if (v.z > 1 || v.x < -1.1 || v.x > 1.1 || v.y < -1.1 || v.y > 1.1) {
         l.visible = false; // อยู่หลังกล้องหรือนอกจอ
         continue;

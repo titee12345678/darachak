@@ -46,6 +46,7 @@ export class Demos {
 
     this._buildOrbital();
     this._buildCompare();
+    this._syncLabels(); // ซ่อนป้ายสาธิตทั้งหมดตั้งแต่เริ่ม (CSS2D ไม่สนใจ group ที่ซ่อน)
   }
 
   /* ── ฉากโลก-ดวงจันทร์-ดวงอาทิตย์ (ใช้ร่วม 4 สาธิตแรก) ──── */
@@ -171,7 +172,7 @@ export class Demos {
         x += r + 2.2;
         mesh.position.set(x, 0, 0);
         x += r;
-        const l = label(`${name}<small>×${r}</small>`);
+        const l = label(name);
         l.position.y = r + 1.6;
         mesh.add(l);
         if (key === 'saturn') {
