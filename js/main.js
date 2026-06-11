@@ -10,6 +10,7 @@ import { deepSpaceTexture } from './textures.js';
 import { UI, REGISTRY } from './ui.js';
 import { Quiz } from './quiz.js';
 import { PROVINCES, ASTEROID_BELT_INFO } from './data.js';
+import { J2000_MS } from './ephemeris.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -89,15 +90,17 @@ function onPick(id) {
   const o = REGISTRY.get(id);
   if (!o) return;
   ui.showInfo(id);
-  if (o.world === 'sky') {
+  if (mode === 'sky') {
     planetarium.select(o.kind === 'constellation' ? id : null);
-    const dir = planetarium.getDirectionTo(id);
-    if (dir && mode === 'sky') flyLookAt(dir);
-  } else if (mode === 'solar') {
+    const dir = planetarium.getDirectionTo(id); // รวมดาวเคราะห์/ดวงอาทิตย์บนฟ้าด้วย
+    if (dir) flyLookAt(dir);
+  } else if (o.world === 'solar') {
     focusOn(id); // แตะดาว → กล้องบินซูมไปหาทันที
   }
 }
-ui.onFocus = (id) => { if (REGISTRY.get(id)?.world === 'solar') focusOn(id); };
+ui.onFocus = (id) => {
+  if (mode === 'solar' && REGISTRY.get(id)?.world === 'solar') focusOn(id);
+};
 ui.onDeselect = () => { if (planetarium) planetarium.deselect(); };
 
 /* ── โหมดกล้อง ────────────────────────────────────────────── */
@@ -146,6 +149,7 @@ function setMode(next) {
   $('deck-hint').textContent = isSolar
     ? 'คลิกดาวเคราะห์เพื่อดูข้อมูล · ลากเพื่อหมุน · ลูกกลิ้งเพื่อซูม'
     : 'ลากเพื่อกวาดมองท้องฟ้า · คลิกชื่อหมู่ดาวหรือดาวเพื่อดูข้อมูล';
+  ui.mode = next;
   ui.fillDrawer(next, onPick);
   if (isSolar) applySolarCamera(); else applySkyCamera();
 }
@@ -408,6 +412,19 @@ function updateCompass() {
   $('compass-dir').textContent = `${THAI_DIRS[Math.round(az / 45) % 8]} (${Math.round(az)}°)`;
 }
 
+/* ── จอแสดงวัน-เวลาจำลอง ──────────────────────────────────── */
+const simDateFmt = new Intl.DateTimeFormat('th-TH', {
+  day: 'numeric', month: 'short', year: '2-digit',
+  hour: '2-digit', minute: '2-digit',
+});
+let simDateTimer = 0;
+function updateSimDate(dt) {
+  simDateTimer -= dt;
+  if (simDateTimer > 0) return;
+  simDateTimer = 0.25;
+  $('sim-date').textContent = simDateFmt.format(new Date(J2000_MS + solar.simDays * 86400000));
+}
+
 /* ── วงจรเรนเดอร์ ─────────────────────────────────────────── */
 const clock = new THREE.Clock();
 function animate() {
@@ -416,6 +433,7 @@ function animate() {
   if (solar && mode === 'solar') {
     solar.update(paused ? 0 : dt, paused ? 0 : daysPerSec(), camera);
     updateFocus(dt);
+    updateSimDate(dt);
   }
   if (mode === 'sky') {
     updateLookTween(dt);

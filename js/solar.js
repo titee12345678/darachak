@@ -11,6 +11,9 @@ import {
   gasGiantTexture, ringTexture, glowSprite,
 } from './textures.js';
 import { ValueNoise } from './noise.js';
+import {
+  daysSinceJ2000, helio, moonGeo, halleyHelio, HALLEY_PERIOD, eclipticToScene,
+} from './ephemeris.js';
 
 const ORBIT_COLOR = 0x7fd4ff;
 
@@ -71,21 +74,21 @@ function makeLabel(text, sub, cls, onClick) {
   return obj;
 }
 
-function orbitLine(a, e = 0, inclineDeg = 0, segments = 256, color = ORBIT_COLOR, opacity = 0.32) {
+/* เส้นวงโคจรจริง: sample ตำแหน่ง ephemeris ตลอดหนึ่งคาบ
+   ได้รูปวงรี ความเอียง และทิศทางตรงตามความเป็นจริง */
+function realOrbitLine(startDay, periodDays, posFn, color = ORBIT_COLOR, opacity = 0.32) {
   const pts = [];
-  for (let i = 0; i <= segments; i++) {
-    const th = (i / segments) * Math.PI * 2;
-    const r = a * (1 - e * e) / (1 + e * Math.cos(th));
-    pts.push(new THREE.Vector3(Math.cos(th) * r, 0, Math.sin(th) * r));
+  const N = 256;
+  for (let i = 0; i <= N; i++) {
+    const e = posFn(startDay + (i / N) * periodDays);
+    pts.push(eclipticToScene(e, new THREE.Vector3()));
   }
   const geo = new THREE.BufferGeometry().setFromPoints(pts);
   const mat = new THREE.LineBasicMaterial({
     color, transparent: true, opacity,
     blending: THREE.AdditiveBlending, depthWrite: false,
   });
-  const line = new THREE.Line(geo, mat);
-  line.rotation.x = THREE.MathUtils.degToRad(inclineDeg);
-  return line;
+  return new THREE.Line(geo, mat);
 }
 
 export class SolarSystem {
@@ -97,7 +100,7 @@ export class SolarSystem {
     this.pickables = [];
     this.orbits = [];
     this.labels = [];
-    this.simDays = 0;
+    this.simDays = daysSinceJ2000(new Date()); // เวลาจำลองยึดเวลาจริง ณ ตอนเปิดแอป
     this.elapsed = 0;
     this.earthSunDir = { value: new THREE.Vector3(1, 0, 0) }; // ทิศดวงอาทิตย์ (view space) สำหรับไฟเมืองกลางคืน
     scene.add(this.group);
@@ -251,17 +254,21 @@ export class SolarSystem {
         });
       }
 
-      const pivot = new THREE.Group();               // หมุน = โคจร
+      const pivot = new THREE.Group();
       const tiltGroup = new THREE.Group();           // แกนเอียง
       const mesh = new THREE.Mesh(new THREE.SphereGeometry(p.radius, 64, 32), material);
       mesh.userData.info = p;
-      tiltGroup.rotation.z = THREE.MathUtils.degToRad(p.tilt || 0);
+      if (p.id === 'earth') {
+        // แกนโลกชี้ทิศจริง (เอียงไปทาง λ=270° ของสุริยวิถี) → ฤดูกาลถูกต้อง
+        tiltGroup.rotation.x = THREE.MathUtils.degToRad(23.44);
+      } else {
+        tiltGroup.rotation.z = THREE.MathUtils.degToRad(p.tilt || 0);
+      }
       tiltGroup.add(mesh);
 
-      const holder = new THREE.Group();              // ตำแหน่งบนวงโคจร
+      const holder = new THREE.Group();              // ตำแหน่งบนวงโคจร (จาก ephemeris จริง)
       holder.add(tiltGroup);
       pivot.add(holder);
-      if (p.inclineDeg) pivot.rotation.x = THREE.MathUtils.degToRad(p.inclineDeg);
       this.group.add(pivot);
 
       // วงแหวน
@@ -330,12 +337,9 @@ export class SolarSystem {
           new THREE.MeshPhongMaterial({ map: moonMap, bumpMap: moonMap, bumpScale: 0.02, shininess: 1 }),
         );
         moonMesh.userData.info = EARTH_MOON;
-        const moonPivot = new THREE.Group();
-        moonPivot.rotation.x = THREE.MathUtils.degToRad(5);
-        moonPivot.add(moonMesh);
         moonMesh.position.set(EARTH_MOON.dist, 0, 0);
-        holder.add(moonPivot);
-        extras.moonPivot = moonPivot;
+        holder.add(moonMesh);
+        extras.moonMesh = moonMesh; // ตำแหน่งจริงคำนวณทุกเฟรมจากสูตร Meeus
         this.pickables.push(moonMesh);
 
         const mlabel = makeLabel('ดวงจันทร์', '(Moon)', 'obj-label', () => this.onPick(EARTH_MOON.id));
@@ -343,10 +347,6 @@ export class SolarSystem {
         moonMesh.add(mlabel);
         this.labels.push(mlabel);
         this.bodies.push({ info: EARTH_MOON, mesh: moonMesh, isMoon: true });
-        // หมุนโลกตามเวลาจริง (ประมาณตำแหน่งเที่ยงวันที่ลองจิจูดดวงอาทิตย์)
-        const now = new Date();
-        const utcHours = now.getUTCHours() + now.getUTCMinutes() / 60;
-        mesh.rotation.y = ((utcHours / 24) * Math.PI * 2) + Math.PI;
       }
 
       // ดวงจันทร์กาลิเลียนของดาวพฤหัสบดี + ไททันของดาวเสาร์ (จุดเล็ก ๆ)
@@ -368,9 +368,9 @@ export class SolarSystem {
         });
       }
 
-      // เส้นวงโคจรเรืองแสง
-      const orbit = orbitLine(p.dist, p.eccentric || 0, p.inclineDeg || 0,
-        256, ORBIT_COLOR, p.type === 'dwarf' ? 0.18 : 0.34);
+      // เส้นวงโคจรเรืองแสง — รูปวงรีจริงจาก ephemeris
+      const orbit = realOrbitLine(this.simDays, p.period, (dd) => helio(p.id, dd),
+        ORBIT_COLOR, p.type === 'dwarf' ? 0.18 : 0.34);
       this.group.add(orbit);
       this.orbits.push(orbit);
 
@@ -381,10 +381,8 @@ export class SolarSystem {
       this.labels.push(label);
 
       this.pickables.push(mesh);
-      const phase = (idx * 2.39996) % (Math.PI * 2); // golden angle กระจายตำแหน่งเริ่มต้น
       this.bodies.push({
-        info: p, pivot, holder, mesh, extras, phase,
-        a: p.dist, e: p.eccentric || 0,
+        info: p, pivot, holder, mesh, extras,
         rotSpeed: (1 / Math.abs(p.rotation || 1)) * Math.sign(p.rotation || 1),
       });
     });
@@ -427,12 +425,8 @@ export class SolarSystem {
     this.labels.push(label);
   }
 
-  /* ── ดาวหางฮัลเลย์ ─────────────────────────────────────── */
+  /* ── ดาวหางฮัลเลย์ (orbital elements จริง) ─────────────── */
   _buildComet() {
-    const a = (COMET.perihelion + COMET.aphelion) / 2;
-    const e = (COMET.aphelion - COMET.perihelion) / (COMET.aphelion + COMET.perihelion);
-    this.cometParams = { a, e, angle: 2.2 };
-
     const head = new THREE.Group();
     const nucleus = new THREE.Mesh(
       new THREE.IcosahedronGeometry(0.22, 1),
@@ -459,7 +453,7 @@ export class SolarSystem {
     this.cometSeeds = Array.from({ length: TAIL }, () => [Math.random(), Math.random(), Math.random()]);
     this.group.add(this.cometTail);
 
-    const orbit = orbitLine(a, e, COMET.inclineDeg, 512, 0x9fc8ff, 0.14);
+    const orbit = realOrbitLine(this.simDays, HALLEY_PERIOD, halleyHelio, 0x9fc8ff, 0.14);
     this.group.add(orbit);
     this.orbits.push(orbit);
 
@@ -469,10 +463,7 @@ export class SolarSystem {
     this.labels.push(label);
 
     this.cometHead = head;
-    this.cometOrbitGroup = new THREE.Group();
-    this.cometOrbitGroup.rotation.x = THREE.MathUtils.degToRad(COMET.inclineDeg);
-    this.cometOrbitGroup.add(head);
-    this.group.add(this.cometOrbitGroup);
+    this.group.add(head);
     this.pickables.push(nucleus);
     this.bodies.push({ info: COMET, mesh: nucleus, isComet: true });
   }
@@ -494,33 +485,34 @@ export class SolarSystem {
       }
     }
 
-    // ดาวเคราะห์โคจร + หมุนรอบตัวเอง
+    // ดาวเคราะห์: ตำแหน่งจริงจาก JPL ephemeris + หมุนรอบตัวเองตามคาบจริง
     for (const b of this.bodies) {
       if (b.isMoon || b.isComet || !b.pivot) continue;
       const p = b.info;
-      const th = b.phase + (t / p.period) * Math.PI * 2;
-      const r = b.a * (1 - b.e * b.e) / (1 + b.e * Math.cos(th));
-      b.holder.position.set(Math.cos(th) * r, 0, Math.sin(th) * r);
-      // หมุนรอบตัวเองตามคาบจริง (rotSpeed = รอบ/วันจำลอง)
-      b.mesh.rotation.y += dt * daysPerSec * b.rotSpeed * Math.PI * 2;
-      if (b.extras.clouds) b.extras.clouds.rotation.y += dt * daysPerSec * Math.PI * 2 * 1.12; // เมฆไหลเร็วกว่าพื้นเล็กน้อย
-      if (b.extras.moonPivot) b.extras.moonPivot.rotation.y = (t / EARTH_MOON.period) * Math.PI * 2;
+      eclipticToScene(helio(p.id, t), b.holder.position);
+
+      if (p.id === 'earth') {
+        // มุมหมุนสัมบูรณ์: ให้ลองจิจูดใต้ดวงอาทิตย์ตรงตามเวลาจำลอง (mean sun)
+        const utc = ((((t % 1) + 1) % 1) * 24 + 12) % 24;       // t=0 คือเที่ยง UTC ของ J2000
+        const subsolarLon = (12 - utc) * 15 * Math.PI / 180;     // ตะวันออกเป็นบวก
+        const sunAz = Math.atan2(b.holder.position.z, -b.holder.position.x); // ทิศดวงอาทิตย์จากโลก
+        b.mesh.rotation.y = sunAz - subsolarLon;
+        if (b.extras.clouds) b.extras.clouds.rotation.y = b.mesh.rotation.y + t * 0.35; // เมฆไหลสัมพัทธ์
+        if (b.extras.moonMesh) {
+          const mg = moonGeo(t); // ทิศดวงจันทร์จริง (geocentric ecliptic) → เฟสถูกต้อง
+          b.extras.moonMesh.position.set(mg.x, mg.z, -mg.y).multiplyScalar(EARTH_MOON.dist);
+        }
+      } else {
+        b.mesh.rotation.y += dt * daysPerSec * b.rotSpeed * Math.PI * 2;
+      }
       if (b.extras.miniMoons) b.extras.miniMoons.forEach((m) => { m.piv.rotation.y += dt * daysPerSec * m.speed * 4; });
     }
 
     // แถบดาวเคราะห์น้อย (คาบเฉลี่ย ~4.6 ปีของซีรีส)
     this.beltGroup.rotation.y += dt * daysPerSec * (Math.PI * 2 / 1680);
 
-    // ดาวหาง — กวาดมุมเร็วใกล้ดวงอาทิตย์ ช้าไกลออกไป (กฎข้อ 2 ของเคปเลอร์)
-    const cp = this.cometParams;
-    {
-      const rNow = this._cometR();
-      const L = Math.PI * 2 * cp.a * cp.a * Math.sqrt(1 - cp.e * cp.e) / COMET.period;
-      cp.angle += dt * daysPerSec * L / (rNow * rNow);
-    }
-    const r = this._cometR();
-    const pos = new THREE.Vector3(Math.cos(cp.angle) * r, 0, Math.sin(cp.angle) * r);
-    this.cometHead.position.copy(pos);
+    // ดาวหางฮัลเลย์: ตำแหน่งจริง (กฎเคปเลอร์ครบถ้วนใน solver)
+    eclipticToScene(halleyHelio(t), this.cometHead.position);
 
     // หาง: ชี้หนีดวงอาทิตย์ ยาวขึ้นเมื่อใกล้ดวงอาทิตย์
     const world = this.cometHead.getWorldPosition(new THREE.Vector3());
@@ -551,11 +543,6 @@ export class SolarSystem {
     // โคโรนาหายใจช้า ๆ
     this.corona[0].scale.setScalar(SUN.radius * (5.2 + Math.sin(this.elapsed * 0.6) * 0.25));
     this.corona[1].scale.setScalar(SUN.radius * (8.5 + Math.sin(this.elapsed * 0.4 + 2) * 0.5));
-  }
-
-  _cometR() {
-    const { a, e, angle } = this.cometParams;
-    return a * (1 - e * e) / (1 + e * Math.cos(angle));
   }
 
   /* ── ค้นหา object สำหรับโฟกัสกล้อง ─────────────────────── */

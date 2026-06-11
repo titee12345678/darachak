@@ -8,6 +8,7 @@ import { CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
 import { CONSTELLATIONS, BRIGHT_STARS, DSOS } from './data.js';
 import { glowSprite, nebulaSprite } from './textures.js';
 import { mulberry32 } from './noise.js';
+import { daysSinceJ2000, helio, moonGeo, eclipticToRaDec } from './ephemeris.js';
 
 const R = 480; // รัศมีโดมท้องฟ้า
 
@@ -77,6 +78,7 @@ export class Planetarium {
     this._buildConstellations();
     this._buildBrightStars();
     this._buildDSOs();
+    this._buildSkyPlanets();
     this._buildHorizon();
     this.setSky(this.lat, this.lon, this.date);
     this.setVisible(false);
@@ -260,6 +262,35 @@ export class Planetarium {
     });
   }
 
+  /* ── ดวงอาทิตย์ ดวงจันทร์ ดาวเคราะห์ — ตำแหน่งจริงตามเวลา ── */
+  _buildSkyPlanets() {
+    const defs = [
+      { id: 'sun', nameTh: 'ดวงอาทิตย์', color: '#ffd27a', size: 34 },
+      { id: 'moon', nameTh: 'ดวงจันทร์', color: '#eceadf', size: 28 },
+      { id: 'mercury', nameTh: 'ดาวพุธ', color: '#cbbcab', size: 8 },
+      { id: 'venus', nameTh: 'ดาวศุกร์', color: '#fff3cf', size: 15 },
+      { id: 'mars', nameTh: 'ดาวอังคาร', color: '#ff9a70', size: 10 },
+      { id: 'jupiter', nameTh: 'ดาวพฤหัสบดี', color: '#ffe3ba', size: 13 },
+      { id: 'saturn', nameTh: 'ดาวเสาร์', color: '#ffeccd', size: 11 },
+    ];
+    this.skyPlanets = defs.map((p) => {
+      const sprite = new THREE.Sprite(new THREE.SpriteMaterial({
+        map: glowSprite(p.color, 'rgba(255,220,150,0)'),
+        transparent: true, blending: THREE.AdditiveBlending, depthWrite: false,
+      }));
+      sprite.scale.setScalar(p.size);
+      const div = document.createElement('div');
+      div.className = 'obj-label';
+      div.innerHTML = `${p.nameTh}`;
+      div.style.color = '#ffe9b8';
+      div.addEventListener('pointerdown', (e) => { e.stopPropagation(); this.onPick(p.id); });
+      const label = new CSS2DObject(div);
+      this.labels.push(label);
+      this.group.add(sprite, label);
+      return { def: p, sprite, label };
+    });
+  }
+
   /* ── พื้นดิน ขอบฟ้า และทิศ ─────────────────────────────── */
   _buildHorizon() {
     // พื้นดินมืดใต้ขอบฟ้า
@@ -409,6 +440,27 @@ export class Planetarium {
       d.sprite.visible = above;
       d.label.visible = above && this.group.visible;
     });
+
+    // ดวงอาทิตย์ ดวงจันทร์ ดาวเคราะห์ — ephemeris จริง ณ วัน/เวลาที่เลือก
+    const dDay = daysSinceJ2000(date);
+    const eEarth = helio('earth', dDay);
+    this.skyPlanets.forEach((sp) => {
+      let vec;
+      if (sp.def.id === 'sun') vec = { x: -eEarth.x, y: -eEarth.y, z: -eEarth.z };
+      else if (sp.def.id === 'moon') vec = moonGeo(dDay);
+      else {
+        const p = helio(sp.def.id, dDay);
+        vec = { x: p.x - eEarth.x, y: p.y - eEarth.y, z: p.z - eEarth.z };
+      }
+      const { ra, dec } = eclipticToRaDec(vec);
+      radecToHorizon(ra, dec, lst, lat, v).multiplyScalar(R * 0.95);
+      sp.sprite.position.copy(v);
+      sp.label.position.copy(v).multiplyScalar(0.93);
+      sp.label.position.y += 10;
+      const above = v.y > -12;
+      sp.sprite.visible = above;
+      sp.label.visible = above && this.group.visible;
+    });
   }
 
   /* ── เลือก/ไฮไลต์หมู่ดาว ───────────────────────────────── */
@@ -433,6 +485,8 @@ export class Planetarium {
     if (bs) return bs.sprite.position.clone().normalize();
     const d = this.dsos.find((x) => x.data.id === id);
     if (d) return d.sprite.position.clone().normalize();
+    const sp = this.skyPlanets.find((x) => x.def.id === id);
+    if (sp && sp.sprite.visible) return sp.sprite.position.clone().normalize();
     return null;
   }
 

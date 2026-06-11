@@ -18,6 +18,7 @@ DSOS.forEach((d) => REGISTRY.set(d.id, { ...d, world: 'sky', kind: 'dso' }));
 export class UI {
   constructor() {
     this.level = 'kid';
+    this.mode = 'solar';
     this.currentId = null;
     this.onFocus = null;       // ตั้งจาก main
     this.speaking = false;
@@ -87,8 +88,8 @@ export class UI {
       extra.classList.add('hidden');
     }
 
-    // ปุ่มบินไปดู เฉพาะวัตถุในระบบสุริยะ
-    $('focus-btn').style.display = o.world === 'solar' ? '' : 'none';
+    // ปุ่มบินไปดู เฉพาะวัตถุในระบบสุริยะ และเฉพาะตอนอยู่โหมดระบบสุริยะ
+    $('focus-btn').style.display = (o.world === 'solar' && this.mode !== 'sky') ? '' : 'none';
 
     $('holo').classList.remove('hidden');
     $('holo').classList.remove('collapsed'); // เปิดวัตถุใหม่ → กางแผงเสมอ
