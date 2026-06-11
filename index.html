@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#02040a">
+<title>ดาราจักร — ห้องเรียนดาราศาสตร์ 3 มิติ · By Tee Jakkrit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600;700&family=Bai+Jamjuree:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+</head>
+<body>
+
+<!-- ── Loading screen ─────────────────────────────── -->
+<div id="loader">
+  <div class="loader-rings">
+    <div class="ring r1"></div><div class="ring r2"></div><div class="ring r3"></div>
+    <div class="loader-core"></div>
+  </div>
+  <h1 class="loader-title">ดาราจักร</h1>
+  <p class="loader-sub">DARACHAK · INTERACTIVE PLANETARIUM</p>
+  <p class="loader-credit">By Tee Jakkrit</p>
+  <div class="loader-bar"><div id="loader-fill"></div></div>
+  <p id="loader-status">กำลังสร้างพื้นผิวดาวเคราะห์…</p>
+</div>
+
+<!-- ── 3D canvas layers ───────────────────────────── -->
+<div id="scene-container"></div>
+<div id="labels-container"></div>
+
+<!-- ── HUD: top bar ───────────────────────────────── -->
+<header id="topbar">
+  <div class="brand">
+    <div class="brand-mark"></div>
+    <div class="brand-text">
+      <span class="brand-th">ดาราจักร</span>
+      <span class="brand-en">DARACHAK · MISSION CONTROL</span>
+      <span class="brand-credit">By Tee Jakkrit</span>
+    </div>
+  </div>
+
+  <nav id="mode-tabs">
+    <button class="mode-tab active" data-mode="solar">ระบบสุริยะ<span>SOLAR SYSTEM</span></button>
+    <button class="mode-tab" data-mode="sky">ท้องฟ้าจำลอง<span>PLANETARIUM</span></button>
+  </nav>
+
+  <div class="top-right">
+    <div id="level-switch" title="ระดับการเรียนรู้">
+      <button class="lvl active" data-level="kid">เด็ก</button>
+      <button class="lvl" data-level="student">นักเรียน</button>
+      <button class="lvl" data-level="expert">ผู้เชี่ยวชาญ</button>
+    </div>
+    <button id="quiz-btn" class="hud-btn">⌬ แบบทดสอบ</button>
+  </div>
+</header>
+
+<!-- ── HUD: bottom control deck ───────────────────── -->
+<footer id="deck">
+  <div class="deck-group" id="deck-solar">
+    <span class="deck-label">ความเร็วเวลา</span>
+    <input type="range" id="speed" min="0" max="100" value="30">
+    <span id="speed-readout" class="deck-value">×1</span>
+    <button id="pause-btn" class="deck-btn" title="หยุด/เล่น">❚❚</button>
+    <div class="deck-sep"></div>
+    <button id="orbit-toggle" class="deck-btn on" title="เส้นวงโคจร">วงโคจร</button>
+    <button id="label-toggle" class="deck-btn on" title="ป้ายชื่อ">ป้ายชื่อ</button>
+    <button id="reset-cam" class="deck-btn" title="มุมมองเริ่มต้น">⌂ กล้อง</button>
+  </div>
+
+  <div class="deck-group hidden" id="deck-sky">
+    <span class="deck-label">จังหวัด</span>
+    <select id="province"></select>
+    <span class="deck-label">วันที่</span>
+    <input type="date" id="sky-date">
+    <span class="deck-label">เวลา</span>
+    <input type="time" id="sky-time" value="20:00">
+    <button id="sky-now" class="deck-btn">ตอนนี้</button>
+    <div class="deck-sep"></div>
+    <button id="const-lines" class="deck-btn on">เส้นหมู่ดาว</button>
+    <button id="const-art" class="deck-btn">ภาพตำนาน</button>
+  </div>
+
+  <div class="deck-hint" id="deck-hint">คลิกดาวเคราะห์เพื่อดูข้อมูล · ลากเพื่อหมุน · ลูกกลิ้งเพื่อซูม</div>
+</footer>
+
+<!-- ── Object list drawer (left) ──────────────────── -->
+<aside id="drawer">
+  <button id="drawer-toggle" title="รายชื่อวัตถุ">☰</button>
+  <div id="drawer-body">
+    <h3 id="drawer-title">วัตถุในระบบสุริยะ</h3>
+    <ul id="drawer-list"></ul>
+  </div>
+</aside>
+
+<!-- ── Hologram info panel (right) ────────────────── -->
+<section id="holo" class="hidden">
+  <div class="holo-frame">
+    <button id="holo-handle" title="ย่อ/ขยายแผงข้อมูล"><span></span></button>
+    <button id="holo-close">✕</button>
+    <div class="holo-scan"></div>
+    <header class="holo-head">
+      <div class="holo-glyph" id="holo-glyph"></div>
+      <div>
+        <h2 id="holo-name">—</h2>
+        <p id="holo-en">—</p>
+        <p id="holo-read">—</p>
+      </div>
+    </header>
+    <div class="holo-actions">
+      <button id="speak-btn">🔊 ฟังเสียงบรรยาย</button>
+      <button id="focus-btn">◎ บินไปดูใกล้ ๆ</button>
+    </div>
+    <dl id="holo-stats"></dl>
+    <div class="holo-fact">
+      <h4>รู้หรือไม่ ?</h4>
+      <p id="holo-fact-text"></p>
+    </div>
+    <div class="holo-extra hidden" id="holo-extra">
+      <h4 id="holo-extra-title">ตำนาน</h4>
+      <p id="holo-extra-text"></p>
+    </div>
+  </div>
+</section>
+
+<!-- ── Quiz modal ─────────────────────────────────── -->
+<div id="quiz-modal" class="hidden">
+  <div class="quiz-frame">
+    <button id="quiz-close">✕</button>
+    <div id="quiz-start">
+      <h2>แบบทดสอบดาราศาสตร์</h2>
+      <p>ทดสอบความรู้เรื่องระบบสุริยะและหมู่ดาว<br>ระดับ: <strong id="quiz-level-name">เด็ก</strong> · 8 ข้อ</p>
+      <button id="quiz-go" class="quiz-primary">เริ่มทำแบบทดสอบ ▸</button>
+    </div>
+    <div id="quiz-play" class="hidden">
+      <div class="quiz-progress"><div id="quiz-prog-fill"></div></div>
+      <p id="quiz-counter">ข้อ 1 / 8</p>
+      <h3 id="quiz-q">—</h3>
+      <div id="quiz-choices"></div>
+      <p id="quiz-feedback"></p>
+      <button id="quiz-next" class="quiz-primary hidden">ข้อต่อไป ▸</button>
+    </div>
+    <div id="quiz-end" class="hidden">
+      <div id="quiz-medal">★</div>
+      <h2 id="quiz-score">—</h2>
+      <p id="quiz-comment">—</p>
+      <button id="quiz-again" class="quiz-primary">ทำอีกครั้ง</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Toast / compass / credit ───────────────────── -->
+<div id="toast" class="hidden"></div>
+<div id="compass" class="hidden">มองไปทาง <strong id="compass-dir">เหนือ</strong></div>
+<div id="credit">By Tee Jakkrit</div>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

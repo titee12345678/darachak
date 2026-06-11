@@ -1,0 +1,459 @@
+/* ═══════════════════════════════════════════════════════════
+   planetarium.js — ท้องฟ้าจำลองแบบโดม
+   หมู่ดาว 12 กลุ่ม · ดาวฤกษ์สำคัญ · วัตถุท้องฟ้าลึก
+   จำลองท้องฟ้าจริงตามจังหวัด วันที่ และเวลา (LST → Alt/Az)
+   ═══════════════════════════════════════════════════════════ */
+import * as THREE from 'three';
+import { CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+import { CONSTELLATIONS, BRIGHT_STARS, DSOS } from './data.js';
+import { glowSprite, nebulaSprite } from './textures.js';
+import { mulberry32 } from './noise.js';
+
+const R = 480; // รัศมีโดมท้องฟ้า
+
+/* ── เวลาดาราคติท้องถิ่น (Local Sidereal Time) ───────────── */
+export function localSiderealTime(date, lonDeg) {
+  const D = date.getTime() / 86400000 - 10957.5; // วันนับจาก J2000.0
+  let gmst = (18.697374558 + 24.06570982441908 * D) % 24;
+  if (gmst < 0) gmst += 24;
+  let lst = (gmst + lonDeg / 15) % 24;
+  if (lst < 0) lst += 24;
+  return lst; // ชั่วโมง
+}
+
+/* RA/Dec (ชม., องศา) → ตำแหน่งบนโดมในพิกัดขอบฟ้า
+   แกนฉาก: +X ตะวันออก, +Y กลางฟ้า, −Z เหนือ */
+function radecToHorizon(raH, decDeg, lstH, latDeg, out) {
+  const a = (raH / 24) * Math.PI * 2;
+  const d = THREE.MathUtils.degToRad(decDeg);
+  const th = (lstH / 24) * Math.PI * 2;
+  const phi = THREE.MathUtils.degToRad(latDeg);
+  const vx = Math.cos(d) * Math.cos(a), vy = Math.cos(d) * Math.sin(a), vz = Math.sin(d);
+  const x1 = vx * Math.cos(th) + vy * Math.sin(th);   // Rz(−θ)
+  const y1 = -vx * Math.sin(th) + vy * Math.cos(th);
+  const east = y1;
+  const up = x1 * Math.cos(phi) + vz * Math.sin(phi);
+  const north = vz * Math.cos(phi) - x1 * Math.sin(phi);
+  return out.set(east, up, -north);
+}
+
+const ART_EMOJI = {
+  hunter: '🏹', bear: '🐻', scorpion: '🦂', lion: '🦁', twins: '🧑‍🤝‍🧑',
+  bull: '🐂', archer: '🏹', queen: '👑', cross: '✦', lyre: '🪕', swan: '🦢',
+};
+
+function emojiSprite(emoji) {
+  const c = document.createElement('canvas');
+  c.width = c.height = 256;
+  const ctx = c.getContext('2d');
+  ctx.font = '190px serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.globalAlpha = 0.9;
+  ctx.filter = 'sepia(1) hue-rotate(160deg) saturate(2.4) brightness(1.15)';
+  ctx.fillText(emoji, 128, 140);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return new THREE.SpriteMaterial({
+    map: tex, transparent: true, opacity: 0.34,
+    blending: THREE.AdditiveBlending, depthWrite: false,
+  });
+}
+
+export class Planetarium {
+  constructor(scene, onPick) {
+    this.scene = scene;
+    this.onPick = onPick;
+    this.group = new THREE.Group();
+    this.labels = [];
+    this.pickables = [];
+    this.lat = 13.75; this.lon = 100.5; this.date = new Date();
+    this.selectedId = null;
+    this.linesVisible = true;
+    this.artVisible = false;
+    scene.add(this.group);
+
+    this._buildBackgroundStars();
+    this._buildMilkyWay();
+    this._buildConstellations();
+    this._buildBrightStars();
+    this._buildDSOs();
+    this._buildHorizon();
+    this.setSky(this.lat, this.lon, this.date);
+    this.setVisible(false);
+  }
+
+  /* ── ดาวพื้นหลัง 6,000 ดวง (พิกัดศูนย์สูตรฟ้าแบบสุ่ม) ──── */
+  _buildBackgroundStars() {
+    const COUNT = 6000;
+    const rand = mulberry32(99);
+    this.bgEq = []; // [ra, dec]
+    const pos = new Float32Array(COUNT * 3);
+    const col = new Float32Array(COUNT * 3);
+    const size = new Float32Array(COUNT);
+    const color = new THREE.Color();
+    for (let i = 0; i < COUNT; i++) {
+      const ra = rand() * 24;
+      const dec = THREE.MathUtils.radToDeg(Math.asin(rand() * 2 - 1));
+      this.bgEq.push([ra, dec]);
+      const k = rand();
+      if (k < 0.1) color.setHSL(0.07, 0.7, 0.8);
+      else if (k < 0.25) color.setHSL(0.13, 0.4, 0.85);
+      else if (k < 0.55) color.setHSL(0.6, 0.4, 0.88);
+      else color.setHSL(0, 0, 0.92);
+      col[i * 3] = color.r; col[i * 3 + 1] = color.g; col[i * 3 + 2] = color.b;
+      size[i] = Math.pow(rand(), 2.6) * 4.4 + 0.7;
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+    geo.setAttribute('aSize', new THREE.BufferAttribute(size, 1));
+    this.bgStars = new THREE.Points(geo, new THREE.ShaderMaterial({
+      transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+      vertexShader: `attribute float aSize; varying vec3 vColor; varying float vUp;
+        void main(){ vColor = color; vUp = position.y;
+          gl_PointSize = aSize;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+      fragmentShader: `varying vec3 vColor; varying float vUp;
+        void main(){ vec2 c = gl_PointCoord - 0.5; float d = length(c) * 2.0;
+          float a = smoothstep(1.0, 0.25, d);
+          if (vUp < 0.0) a *= 0.0;       // ใต้ขอบฟ้ามองไม่เห็น
+          gl_FragColor = vec4(vColor, a); }`,
+      vertexColors: true,
+    }));
+    this.group.add(this.bgStars);
+  }
+
+  /* ── แถบทางช้างเผือก (ระนาบกาแล็กซี) ───────────────────── */
+  _buildMilkyWay() {
+    // ขั้วกาแล็กซีเหนือ: RA 12.86h, Dec +27.13°
+    const pole = new THREE.Vector3();
+    const a = (12.86 / 24) * Math.PI * 2, d = THREE.MathUtils.degToRad(27.13);
+    pole.set(Math.cos(d) * Math.cos(a), Math.cos(d) * Math.sin(a), Math.sin(d));
+    const A = new THREE.Vector3(0, 0, 1).cross(pole).normalize();
+    const B = pole.clone().cross(A).normalize();
+    const rand = mulberry32(55);
+    const COUNT = 900;
+    this.mwEq = []; // unit vectors ในพิกัดศูนย์สูตร
+    const pos = new Float32Array(COUNT * 3);
+    const size = new Float32Array(COUNT);
+    for (let i = 0; i < COUNT; i++) {
+      const t = rand() * Math.PI * 2;
+      const spread = (rand() + rand() + rand() - 1.5) * 0.12;
+      const v = A.clone().multiplyScalar(Math.cos(t))
+        .add(B.clone().multiplyScalar(Math.sin(t)))
+        .add(pole.clone().multiplyScalar(spread)).normalize();
+      this.mwEq.push(v);
+      // หนาแน่นขึ้นใกล้ใจกลาง (ทิศคนยิงธนู RA~18.5h)
+      size[i] = 14 + rand() * 30;
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    geo.setAttribute('aSize', new THREE.BufferAttribute(size, 1));
+    this.milkyWay = new THREE.Points(geo, new THREE.ShaderMaterial({
+      transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+      uniforms: { uTex: { value: glowSprite('rgba(225,220,255,0.5)', 'rgba(160,160,220,0)') } },
+      vertexShader: `attribute float aSize; varying float vUp;
+        void main(){ vUp = position.y;
+          gl_PointSize = aSize;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+      fragmentShader: `uniform sampler2D uTex; varying float vUp;
+        void main(){ vec4 t = texture2D(uTex, gl_PointCoord);
+          float a = t.a * 0.16; if (vUp < 0.0) a = 0.0;
+          gl_FragColor = vec4(t.rgb, a); }`,
+    }));
+    this.group.add(this.milkyWay);
+  }
+
+  /* ── หมู่ดาว 12 กลุ่ม ──────────────────────────────────── */
+  _buildConstellations() {
+    this.constellations = CONSTELLATIONS.map((c) => {
+      const starTex = glowSprite('rgba(255,255,255,1)', 'rgba(160,200,255,0)');
+      const starsGroup = new THREE.Group();
+      const sprites = c.stars.map(([name, ra, dec, mag]) => {
+        const s = new THREE.Sprite(new THREE.SpriteMaterial({
+          map: starTex, transparent: true,
+          blending: THREE.AdditiveBlending, depthWrite: false,
+        }));
+        const sc = THREE.MathUtils.clamp(14 - mag * 2.6, 4, 15);
+        s.scale.setScalar(sc);
+        s.userData = { ra, dec, name };
+        starsGroup.add(s);
+        return s;
+      });
+
+      // เส้นเชื่อมเรืองแสง
+      const lineGeo = new THREE.BufferGeometry();
+      lineGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(c.lines.length * 6), 3));
+      const lineMat = new THREE.LineBasicMaterial({
+        color: 0x86d8ff, transparent: true, opacity: 0.4,
+        blending: THREE.AdditiveBlending, depthWrite: false,
+      });
+      const lines = new THREE.LineSegments(lineGeo, lineMat);
+
+      // ป้ายชื่อหมู่ดาว
+      const div = document.createElement('div');
+      div.className = 'const-label';
+      div.innerHTML = `${c.nameTh}<small>(${c.nameEn})</small>`;
+      div.addEventListener('pointerdown', (e) => { e.stopPropagation(); this.onPick(c.id); });
+      const label = new CSS2DObject(div);
+      this.labels.push(label);
+
+      // ภาพตำนานโปร่งใส
+      const art = new THREE.Sprite(emojiSprite(ART_EMOJI[c.art] || '✶'));
+      art.visible = false;
+
+      // ป้ายชื่อดาวสมาชิก (โชว์เมื่อเลือก)
+      const starLabels = c.stars.map(([name]) => {
+        const sd = document.createElement('div');
+        sd.className = 'star-label';
+        sd.textContent = name;
+        const so = new CSS2DObject(sd);
+        so.visible = false;
+        so.userData.memberOf = c.id; // โชว์เฉพาะเมื่อเลือกหมู่ดาวนี้
+        this.labels.push(so);
+        return so;
+      });
+
+      this.group.add(starsGroup, lines, label, art);
+      starLabels.forEach((l) => this.group.add(l));
+      return { data: c, sprites, lines, label, art, starLabels };
+    });
+  }
+
+  /* ── ดาวฤกษ์สว่างสำคัญ ─────────────────────────────────── */
+  _buildBrightStars() {
+    this.brightStars = BRIGHT_STARS.map((s) => {
+      const tex = glowSprite(s.color, 'rgba(150,180,255,0)');
+      const sprite = new THREE.Sprite(new THREE.SpriteMaterial({
+        map: tex, transparent: true,
+        blending: THREE.AdditiveBlending, depthWrite: false,
+      }));
+      sprite.scale.setScalar(THREE.MathUtils.clamp(16 - s.mag * 4, 7, 20));
+      const div = document.createElement('div');
+      div.className = 'star-label';
+      div.textContent = s.nameTh;
+      div.addEventListener('pointerdown', (e) => { e.stopPropagation(); this.onPick(s.id); });
+      const label = new CSS2DObject(div);
+      this.labels.push(label);
+      this.group.add(sprite, label);
+      return { data: s, sprite, label };
+    });
+  }
+
+  /* ── วัตถุท้องฟ้าลึก ───────────────────────────────────── */
+  _buildDSOs() {
+    this.dsos = DSOS.filter((d) => d.kind !== 'milkyway').map((d, i) => {
+      const sprite = new THREE.Sprite(new THREE.SpriteMaterial({
+        map: nebulaSprite(d.color, 60 + i * 13),
+        transparent: true, opacity: 0.85,
+        blending: THREE.AdditiveBlending, depthWrite: false,
+      }));
+      sprite.scale.setScalar(d.size * 13);
+      const div = document.createElement('div');
+      div.className = 'dso-label';
+      div.textContent = d.nameTh;
+      div.addEventListener('pointerdown', (e) => { e.stopPropagation(); this.onPick(d.id); });
+      const label = new CSS2DObject(div);
+      this.labels.push(label);
+      this.group.add(sprite, label);
+      return { data: d, sprite, label };
+    });
+  }
+
+  /* ── พื้นดิน ขอบฟ้า และทิศ ─────────────────────────────── */
+  _buildHorizon() {
+    // พื้นดินมืดใต้ขอบฟ้า
+    const ground = new THREE.Mesh(
+      new THREE.CylinderGeometry(R * 1.05, R * 1.05, R * 0.5, 64, 1, true),
+      new THREE.MeshBasicMaterial({ color: 0x030608, side: THREE.DoubleSide }),
+    );
+    ground.position.y = -R * 0.25 - 2;
+    this.group.add(ground);
+    const groundCap = new THREE.Mesh(
+      new THREE.CircleGeometry(R * 1.05, 64),
+      new THREE.MeshBasicMaterial({ color: 0x040709 }),
+    );
+    groundCap.rotation.x = -Math.PI / 2;
+    groundCap.position.y = -2;
+    this.group.add(groundCap);
+
+    // แสงเรืองขอบฟ้า
+    const horizonGlow = new THREE.Mesh(
+      new THREE.CylinderGeometry(R * 0.998, R * 0.998, R * 0.12, 96, 1, true),
+      new THREE.MeshBasicMaterial({
+        color: 0x1a3a52, transparent: true, opacity: 0.5,
+        side: THREE.BackSide, blending: THREE.AdditiveBlending, depthWrite: false,
+      }),
+    );
+    horizonGlow.position.y = R * 0.03;
+    this.group.add(horizonGlow);
+
+    // วงแหวนขอบฟ้า
+    const ringPts = [];
+    for (let i = 0; i <= 128; i++) {
+      const t = (i / 128) * Math.PI * 2;
+      ringPts.push(new THREE.Vector3(Math.cos(t) * R * 0.99, 0, Math.sin(t) * R * 0.99));
+    }
+    const ring = new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints(ringPts),
+      new THREE.LineBasicMaterial({ color: 0x4a90b8, transparent: true, opacity: 0.55 }),
+    );
+    this.group.add(ring);
+
+    // ป้ายทิศภาษาไทย
+    const dirs = [
+      ['เหนือ (N)', 0, 0, -1], ['ตะวันออก (E)', 1, 0, 0],
+      ['ใต้ (S)', 0, 0, 1], ['ตะวันตก (W)', -1, 0, 0],
+    ];
+    dirs.forEach(([name, x, y, z]) => {
+      const div = document.createElement('div');
+      div.className = 'const-label';
+      div.style.color = '#ffb454';
+      div.textContent = name;
+      const o = new CSS2DObject(div);
+      o.position.set(x * R * 0.95, 8, z * R * 0.95);
+      this.group.add(o);
+      this.labels.push(o);
+    });
+
+    // เส้นกริดมุมเงยจาง ๆ
+    [30, 60].forEach((alt) => {
+      const r2 = Math.cos(THREE.MathUtils.degToRad(alt)) * R;
+      const y2 = Math.sin(THREE.MathUtils.degToRad(alt)) * R;
+      const pts = [];
+      for (let i = 0; i <= 96; i++) {
+        const t = (i / 96) * Math.PI * 2;
+        pts.push(new THREE.Vector3(Math.cos(t) * r2, y2, Math.sin(t) * r2));
+      }
+      const l = new THREE.Line(
+        new THREE.BufferGeometry().setFromPoints(pts),
+        new THREE.LineBasicMaterial({ color: 0x2a5a78, transparent: true, opacity: 0.16 }),
+      );
+      this.group.add(l);
+    });
+  }
+
+  /* ── จัดท้องฟ้าตามสถานที่และเวลา ───────────────────────── */
+  setSky(lat, lon, date) {
+    this.lat = lat; this.lon = lon; this.date = date;
+    const lst = localSiderealTime(date, lon);
+    const v = new THREE.Vector3();
+
+    // ดาวพื้นหลัง
+    const bp = this.bgStars.geometry.attributes.position;
+    this.bgEq.forEach(([ra, dec], i) => {
+      radecToHorizon(ra, dec, lst, lat, v).multiplyScalar(R * 1.02);
+      bp.setXYZ(i, v.x, v.y, v.z);
+    });
+    bp.needsUpdate = true;
+
+    // ทางช้างเผือก
+    const mp = this.milkyWay.geometry.attributes.position;
+    const th = (lst / 24) * Math.PI * 2, phi = THREE.MathUtils.degToRad(lat);
+    this.mwEq.forEach((u, i) => {
+      const x1 = u.x * Math.cos(th) + u.y * Math.sin(th);
+      const y1 = -u.x * Math.sin(th) + u.y * Math.cos(th);
+      const east = y1, up = x1 * Math.cos(phi) + u.z * Math.sin(phi);
+      const north = u.z * Math.cos(phi) - x1 * Math.sin(phi);
+      mp.setXYZ(i, east * R, up * R, -north * R);
+    });
+    mp.needsUpdate = true;
+
+    // หมู่ดาว
+    this.constellations.forEach((con) => {
+      const centroid = new THREE.Vector3();
+      con.sprites.forEach((s, i) => {
+        radecToHorizon(s.userData.ra, s.userData.dec, lst, lat, v).multiplyScalar(R);
+        s.position.copy(v);
+        centroid.add(v);
+        con.starLabels[i].position.copy(v).multiplyScalar(0.97);
+        con.starLabels[i].position.y -= 6;
+      });
+      centroid.divideScalar(con.sprites.length);
+      con.label.position.copy(centroid).multiplyScalar(1.04);
+      con.art.position.copy(centroid).multiplyScalar(0.92);
+      const artScale = con.data.id === 'crux' ? 40 : 95;
+      con.art.scale.setScalar(artScale);
+      // ซ่อนป้ายถ้าทั้งกลุ่มอยู่ใต้ขอบฟ้า
+      con.label.visible = this.group.visible && centroid.y > -R * 0.05;
+      const lp = con.lines.geometry.attributes.position;
+      con.data.lines.forEach(([i1, i2], k) => {
+        const p1 = con.sprites[i1].position, p2 = con.sprites[i2].position;
+        lp.setXYZ(k * 2, p1.x, p1.y, p1.z);
+        lp.setXYZ(k * 2 + 1, p2.x, p2.y, p2.z);
+      });
+      lp.needsUpdate = true;
+      con.lines.visible = this.linesVisible && this.group.visible;
+      con.sprites.forEach((s) => { s.visible = s.position.y > -10; });
+      con.art.visible = (this.artVisible || this.selectedId === con.data.id)
+        && centroid.y > 0 && this.group.visible;
+    });
+
+    // ดาวสว่าง
+    this.brightStars.forEach((bs) => {
+      radecToHorizon(bs.data.ra, bs.data.dec, lst, lat, v).multiplyScalar(R);
+      bs.sprite.position.copy(v);
+      bs.label.position.copy(v).multiplyScalar(0.96);
+      bs.label.position.y += 8;
+      const above = v.y > -8;
+      bs.sprite.visible = above;
+      bs.label.visible = above && this.group.visible;
+    });
+
+    // DSO
+    this.dsos.forEach((d) => {
+      radecToHorizon(d.data.ra, d.data.dec, lst, lat, v).multiplyScalar(R * 0.97);
+      d.sprite.position.copy(v);
+      d.label.position.copy(v).multiplyScalar(0.94);
+      const above = v.y > -8;
+      d.sprite.visible = above;
+      d.label.visible = above && this.group.visible;
+    });
+  }
+
+  /* ── เลือก/ไฮไลต์หมู่ดาว ───────────────────────────────── */
+  select(id) {
+    this.selectedId = id;
+    this.constellations.forEach((con) => {
+      const on = con.data.id === id;
+      con.lines.material.opacity = on ? 0.95 : 0.4;
+      con.lines.material.color.set(on ? 0xcdeeff : 0x86d8ff);
+      con.starLabels.forEach((l) => { l.visible = on && this.group.visible; });
+      con.art.visible = (on || this.artVisible) && this.group.visible
+        && con.label.position.y > 0;
+    });
+  }
+  deselect() { this.select(null); }
+
+  /* ทิศทางมอง (กล้องชี้ไปที่วัตถุ id) — คืน Vector3 หรือ null */
+  getDirectionTo(id) {
+    const con = this.constellations.find((c) => c.data.id === id);
+    if (con) return con.label.position.clone().normalize();
+    const bs = this.brightStars.find((b) => b.data.id === id);
+    if (bs) return bs.sprite.position.clone().normalize();
+    const d = this.dsos.find((x) => x.data.id === id);
+    if (d) return d.sprite.position.clone().normalize();
+    return null;
+  }
+
+  setLinesVisible(vis) {
+    this.linesVisible = vis;
+    this.constellations.forEach((c) => { c.lines.visible = vis && this.group.visible; });
+  }
+  setArtVisible(vis) {
+    this.artVisible = vis;
+    this.constellations.forEach((c) => {
+      c.art.visible = (vis || this.selectedId === c.data.id)
+        && c.label.position.y > 0 && this.group.visible;
+    });
+  }
+
+  setVisible(vis) {
+    this.group.visible = vis;
+    this.labels.forEach((l) => {
+      const member = l.userData.memberOf;
+      l.visible = vis && (!member || member === this.selectedId);
+    });
+    if (vis) this.setSky(this.lat, this.lon, this.date); // รีเฟรช visibility ป้าย
+  }
+}
