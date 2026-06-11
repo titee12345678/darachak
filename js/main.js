@@ -10,7 +10,7 @@ import { deepSpaceTexture } from './textures.js';
 import { UI, REGISTRY } from './ui.js';
 import { Quiz } from './quiz.js';
 import { PROVINCES, ASTEROID_BELT_INFO } from './data.js';
-import { J2000_MS } from './ephemeris.js';
+import { J2000_MS, daysSinceJ2000 } from './ephemeris.js';
 import { Demos } from './demos.js';
 import { Tour } from './tour.js';
 
@@ -54,6 +54,10 @@ let mode = 'solar';
 let paused = false;
 let focusId = null;
 let solar, planetarium, starfield, deepSpaceTex, demos, tour;
+let skyLive = true;        // ท้องฟ้าจำลองเดินตามเวลาจริง (จนกว่าจะเลือกเวลาเอง)
+let skyLiveTimer = 0;
+let applySkyFn = null;
+let setSkyInputsToNowFn = null;
 const ui = new UI();
 const quiz = new Quiz(() => ui.level);
 
@@ -376,6 +380,13 @@ function setupControls() {
   speedInput.addEventListener('input', updateSpeedLabel);
   updateSpeedLabel();
 
+  // ซิงก์เวลาจำลองกลับมาปัจจุบัน (หลังเร่งเวลาเที่ยวอนาคต/อดีต)
+  $('sync-now').addEventListener('click', () => {
+    solar.simDays = daysSinceJ2000(new Date());
+    simDateTimer = 0;
+    ui.toast('⏱ กลับมาเวลาจริงปัจจุบัน — ตำแหน่งดาวตรงท้องฟ้าคืนนี้');
+  });
+
   $('pause-btn').addEventListener('click', () => {
     paused = !paused;
     $('pause-btn').textContent = paused ? '▶' : '❚❚';
@@ -436,15 +447,22 @@ function setupControls() {
     planetarium.setSky(p.lat, p.lon, date);
     if (planetarium.selectedId) planetarium.select(planetarium.selectedId);
   };
-  prov.addEventListener('change', () => { applySky(); ui.toast(`ท้องฟ้าเหนือ${PROVINCES[+prov.value].name}`); });
-  $('sky-date').addEventListener('change', applySky);
-  $('sky-time').addEventListener('change', applySky);
-  $('sky-now').addEventListener('click', () => {
+  applySkyFn = applySky;
+  const setSkyInputsToNow = () => {
     const now = new Date();
     $('sky-date').value = now.toISOString().slice(0, 10);
     $('sky-time').value = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  };
+  setSkyInputsToNowFn = setSkyInputsToNow;
+  prov.addEventListener('change', () => { applySky(); ui.toast(`ท้องฟ้าเหนือ${PROVINCES[+prov.value].name}`); });
+  // ผู้ใช้เลือกเวลาเอง = ออกจากโหมดเดินตามเวลาจริง
+  $('sky-date').addEventListener('change', () => { skyLive = false; applySky(); });
+  $('sky-time').addEventListener('change', () => { skyLive = false; applySky(); });
+  $('sky-now').addEventListener('click', () => {
+    skyLive = true;
+    setSkyInputsToNow();
     applySky();
-    ui.toast('แสดงท้องฟ้า ณ เวลาปัจจุบัน');
+    ui.toast('🔴 ท้องฟ้าเดินตามเวลาจริง — ดาวจะเคลื่อนเองเหมือนนั่งดูจริง');
   });
   $('const-lines').addEventListener('click', (e) => {
     const on = !e.currentTarget.classList.contains('on');
@@ -569,6 +587,13 @@ function animate() {
     }
     if (mode === 'sky') {
       planetarium.update?.(dt, clock.elapsedTime); // ดาวกะพริบ + ดาวตก
+      // โหมดเวลาจริง: ท้องฟ้าหมุนตามจริง (รีเฟรชทุก 30 วิ ≈ ดาวขยับ 0.125°)
+      skyLiveTimer -= dt;
+      if (skyLive && skyLiveTimer <= 0) {
+        skyLiveTimer = 30;
+        setSkyInputsToNowFn?.();
+        applySkyFn?.();
+      }
       updateLookTween(dt);
       updateCompass();
     }

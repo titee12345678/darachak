@@ -34,7 +34,7 @@ export const PLANETS = [
   {
     id: 'mercury', type: 'planet',
     nameTh: 'ดาวพุธ', nameEn: 'Mercury', read: 'อ่านว่า "เมอร์-คิว-รี"',
-    dist: 14, radius: 0.42, period: 88, rotation: 58.6, tilt: 0.03,
+    radius: 0.42, period: 88, rotation: 58.6, tilt: 0.03,
     color: '#9c8e82',
     tex: { base: ['#8d8073', '#6e6157', '#a89a8b', '#5b5048'], craters: 220, kind: 'rocky' },
     stats: [
@@ -58,7 +58,7 @@ export const PLANETS = [
   {
     id: 'venus', type: 'planet',
     nameTh: 'ดาวศุกร์', nameEn: 'Venus', read: 'อ่านว่า "วี-นัส"',
-    dist: 19, radius: 0.95, period: 224.7, rotation: -243, tilt: 177.4,
+    radius: 0.95, period: 224.7, rotation: -243, tilt: 177.4,
     color: '#e8c87e',
     tex: { base: ['#e8c87e', '#d4a95c', '#f2dca2', '#c19449'], kind: 'venus' },
     stats: [
@@ -83,7 +83,7 @@ export const PLANETS = [
   {
     id: 'earth', type: 'planet',
     nameTh: 'โลก', nameEn: 'Earth', read: 'อ่านว่า "เอิร์ธ"',
-    dist: 25, radius: 1.0, period: 365.25, rotation: 1, tilt: 23.4,
+    radius: 1.0, period: 365.25, rotation: 1, tilt: 23.4,
     color: '#5d9be0',
     tex: { kind: 'earth' },
     stats: [
@@ -109,7 +109,7 @@ export const PLANETS = [
   {
     id: 'mars', type: 'planet',
     nameTh: 'ดาวอังคาร', nameEn: 'Mars', read: 'อ่านว่า "มาร์ส"',
-    dist: 31, radius: 0.55, period: 687, rotation: 1.03, tilt: 25.2,
+    radius: 0.55, period: 687, rotation: 1.03, tilt: 25.2,
     color: '#d96f4a',
     tex: { base: ['#c1603d', '#a44a2c', '#d97e54', '#7e3a22'], craters: 90, kind: 'mars' },
     stats: [
@@ -134,7 +134,7 @@ export const PLANETS = [
   {
     id: 'jupiter', type: 'planet',
     nameTh: 'ดาวพฤหัสบดี', nameEn: 'Jupiter', read: 'อ่านว่า "จู-ปิ-เตอร์"',
-    dist: 46, radius: 3.6, period: 4331, rotation: 0.41, tilt: 3.1,
+    radius: 3.6, period: 4331, rotation: 0.41, tilt: 3.1,
     color: '#d8a576',
     tex: { kind: 'jupiter' },
     stats: [
@@ -159,7 +159,7 @@ export const PLANETS = [
   {
     id: 'saturn', type: 'planet',
     nameTh: 'ดาวเสาร์', nameEn: 'Saturn', read: 'อ่านว่า "แซท-เทิร์น"',
-    dist: 60, radius: 3.1, period: 10747, rotation: 0.45, tilt: 26.7,
+    radius: 3.1, period: 10747, rotation: 0.45, tilt: 26.7,
     color: '#e3cb9a',
     tex: { kind: 'saturn' },
     rings: { inner: 1.35, outer: 2.45 },
@@ -185,7 +185,7 @@ export const PLANETS = [
   {
     id: 'uranus', type: 'planet',
     nameTh: 'ดาวยูเรนัส', nameEn: 'Uranus', read: 'อ่านว่า "ยู-เรอ-นัส"',
-    dist: 73, radius: 1.7, period: 30589, rotation: -0.72, tilt: 97.8,
+    radius: 1.7, period: 30589, rotation: -0.72, tilt: 97.8,
     color: '#9ad9e0',
     tex: { kind: 'uranus' },
     rings: { inner: 1.6, outer: 1.95, faint: true },
@@ -210,7 +210,7 @@ export const PLANETS = [
   {
     id: 'neptune', type: 'planet',
     nameTh: 'ดาวเนปจูน', nameEn: 'Neptune', read: 'อ่านว่า "เนป-จูน"',
-    dist: 85, radius: 1.65, period: 59800, rotation: 0.67, tilt: 28.3,
+    radius: 1.65, period: 59800, rotation: 0.67, tilt: 28.3,
     color: '#4a6fe3',
     tex: { kind: 'neptune' },
     stats: [
@@ -237,7 +237,7 @@ export const DWARF_PLANETS = [
   {
     id: 'ceres', type: 'dwarf',
     nameTh: 'ดาวซีรีส', nameEn: 'Ceres (Dwarf Planet)', read: 'อ่านว่า "ซี-รีส"',
-    dist: 37.5, radius: 0.22, period: 1680, rotation: 0.38, tilt: 4,
+    radius: 0.22, period: 1680, rotation: 0.38, tilt: 4,
     color: '#9a948c',
     tex: { base: ['#8f897f', '#736e66', '#a39d93', '#5f5a53'], craters: 160, kind: 'rocky' },
     stats: [
@@ -247,6 +247,12 @@ export const DWARF_PLANETS = [
       ['โคจรรอบดวงอาทิตย์', '<b>4.6</b> ปี'],
       ['อุณหภูมิเฉลี่ย', '<b>–105</b> °C'],
     ],
+    statsX: [
+      ['แรงโน้มถ่วง', '<b>0.029</b> เท่าของโลก'],
+      ['ยานสำรวจ', 'ดอว์น (Dawn) โคจรศึกษา พ.ศ. 2558–2561'],
+      ['พื้นผิวในแอป', 'แผนที่จริงจากยานดอว์น (NASA/JPL-Caltech)'],
+    ],
+    gravity: 0.029,
     fact: 'ซีรีสเป็นวัตถุที่ใหญ่ที่สุดในแถบดาวเคราะห์น้อย และเป็นดาวเคราะห์แคระดวงเดียวที่อยู่ในระบบสุริยะชั้นใน นักวิทยาศาสตร์พบไอน้ำพวยพุ่งจากพื้นผิว!',
     factKid: 'ซีรีสคือก้อนหินยักษ์ที่ใหญ่ที่สุดในแถบดาวเคราะห์น้อย ข้างในอาจมีน้ำแข็งซ่อนอยู่ด้วยนะ',
     speech: 'ดาวซีรีส เป็นดาวเคราะห์แคระที่อยู่ในแถบดาวเคราะห์น้อย ระหว่างดาวอังคารกับดาวพฤหัสบดี',
@@ -254,7 +260,7 @@ export const DWARF_PLANETS = [
   {
     id: 'pluto', type: 'dwarf',
     nameTh: 'ดาวพลูโต', nameEn: 'Pluto (Dwarf Planet)', read: 'อ่านว่า "พลู-โต"',
-    dist: 96, radius: 0.3, period: 90560, rotation: -6.4, tilt: 122.5, eccentric: 0.17, inclineDeg: 10,
+    radius: 0.3, period: 90560, rotation: -6.4, tilt: 122.5,
     color: '#cdb6a0',
     tex: { base: ['#c8b29c', '#a08a74', '#e0cdb8', '#7d6a58'], craters: 40, kind: 'rocky' },
     photo: 'img/pluto.jpg',
@@ -285,7 +291,6 @@ export const DWARF_PLANETS = [
 export const COMET = {
   id: 'comet', type: 'comet',
   nameTh: 'ดาวหางฮัลเลย์', nameEn: "Halley's Comet", read: 'อ่านว่า "ฮัล-เลย์"',
-  perihelion: 17, aphelion: 92, period: 27740, inclineDeg: 18,
   color: '#bfe8ff',
   stats: [
     ['ชนิด', 'ดาวหางคาบสั้น'],
@@ -993,7 +998,7 @@ export const QUIZ_COMMENTS = [
   { min: 0, medal: '☄', text: 'ไม่เป็นไร ลองสำรวจจักรวาลเพิ่มอีกหน่อยแล้วกลับมาท้าทายใหม่นะ!' },
   { min: 0.4, medal: '🌙', text: 'เก่งใช้ได้เลย! ลองคลิกดูข้อมูลดาวต่าง ๆ เพิ่มเติม แล้วคะแนนจะพุ่งแน่นอน' },
   { min: 0.7, medal: '⭐', text: 'ยอดเยี่ยมมาก! ความรู้ดาราศาสตร์ของคุณอยู่ในระดับสูง' },
-  { min: 1.0, medal: '🛰', text: 'สมบูรณ์แบบ! คุณคือนักดาราศาสตร์ตัวจริงแห่งดาราจักร!' },
+  { min: 1.0, medal: '🛰', text: 'สมบูรณ์แบบ! คุณคือนักดาราศาสตร์ตัวจริงแห่งระบบสุริยะ!' },
 ];
 
 export const LEVEL_NAMES = { kid: 'เด็ก', student: 'นักเรียน', expert: 'ผู้เชี่ยวชาญ' };

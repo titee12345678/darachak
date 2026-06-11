@@ -45,7 +45,7 @@ const REAL_MAPS = {
   saturn: '2k_saturn.jpg',
   uranus: '2k_uranus.jpg',
   neptune: '2k_neptune.jpg',
-  ceres: '2k_ceres_fictional.jpg',
+  ceres: '2k_ceres.jpg', // Dawn global map จริง
   pluto: '2k_pluto.jpg', // New Horizons global mosaic จริง
 };
 

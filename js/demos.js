@@ -7,6 +7,7 @@
    ═══════════════════════════════════════════════════════════ */
 import * as THREE from 'three';
 import { CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+import { glowSprite } from './textures.js';
 
 const $ = (id) => document.getElementById(id);
 const DEG = Math.PI / 180;
@@ -27,6 +28,9 @@ export class Demos {
     this.scene = scene;
     this.camera = camera;
     this.controls = controls;
+    // layer 1 = เส้นช่วยสอน (แกน เส้นศูนย์สูตร วงโคจร กรวยเงา)
+    // กล้องหลักเห็น แต่จอ "มุมมองตาเห็นจริง" ไม่เห็น — ตาจริงไม่มีเส้นพวกนี้
+    this.camera.layers.enable(1);
     this.active = null;
     this.group = new THREE.Group();
     this.group.visible = false;
@@ -63,6 +67,14 @@ export class Demos {
     this.sunLabel = label('ดวงอาทิตย์ ☀', 'obj-label sun-label');
     this.sunLabel.position.y = 8;
     this.demoSun.add(this.sunLabel);
+    // โคโรนาเรืองรอบขอบดวง — ตอนสุริยุปราคาเต็มดวงจะเห็นวงแหวนแสงเหมือนจริง
+    const corona = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: glowSprite('rgba(255,200,110,0.85)', 'rgba(255,120,20,0)', 256),
+      transparent: true, opacity: 0.85,
+      blending: THREE.AdditiveBlending, depthWrite: false,
+    }));
+    corona.scale.setScalar(21);
+    this.demoSun.add(corona);
     g.add(this.demoSun);
     this.demoLight = new THREE.PointLight(0xffffff, 4000, 0, 1.6);
     g.add(this.demoLight, new THREE.AmbientLight(0x404048, 0.7));
@@ -170,7 +182,12 @@ export class Demos {
       });
     g.add(this.seasonMarks);
 
-    // กล้องจอเล็ก "มุมมองที่เห็นจริง"
+    // เส้นช่วยสอนทั้งหมด → layer 1 (มองไม่เห็นในจอ "ตาเห็นจริง")
+    [axis, eq, this.moonOrbit, this.earthOrbit, this.alignLine,
+      this.earthShadow, this.moonShadow].forEach((o) => o.layers.set(1));
+    this.phaseMarks.traverse((o) => { if (o.isMesh) o.layers.set(1); });
+
+    // กล้องจอเล็ก "มุมมองที่เห็นจริง" (เห็นเฉพาะ layer 0 = วัตถุจริง)
     this.insetCamera = new THREE.PerspectiveCamera(10, 1, 0.3, 300);
   }
 
