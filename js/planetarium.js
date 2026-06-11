@@ -364,6 +364,59 @@ export class Planetarium {
     }
   }
 
+  /* ── พื้นหญ้าแบบนิ่ง (วาดครั้งเดียว ไม่กินสเปคขณะเล่น) ──── */
+  _grassTexture() {
+    const S = 512;
+    const c = document.createElement('canvas');
+    c.width = c.height = S;
+    const ctx = c.getContext('2d');
+    const rand = mulberry32(1357);
+    ctx.fillStyle = '#17240e';
+    ctx.fillRect(0, 0, S, S);
+    // หย่อมเฉดให้สนามไม่แบน
+    for (let i = 0; i < 50; i++) {
+      const x = rand() * S, y = rand() * S, r = 40 + rand() * 100;
+      const gg = ctx.createRadialGradient(x, y, 0, x, y, r);
+      const tone = rand() < 0.5 ? '30, 48, 20' : '15, 26, 10';
+      gg.addColorStop(0, `rgba(${tone}, ${0.3 + rand() * 0.25})`);
+      gg.addColorStop(1, `rgba(${tone}, 0)`);
+      ctx.fillStyle = gg;
+      ctx.fillRect(x - r, y - r, r * 2, r * 2);
+    }
+    // ใบหญ้าตั้ง ๆ แน่น ๆ แบบสนามหญ้า (เบลอบางให้เนียน)
+    ctx.filter = 'blur(0.4px)';
+    for (let i = 0; i < 14000; i++) {
+      const x = rand() * S, y = rand() * S;
+      const len = 4 + rand() * 7;
+      const lean = (rand() - 0.5) * 3.5;
+      const green = 58 + rand() * 72;
+      ctx.strokeStyle = `rgba(${green * 0.42}, ${green}, ${green * 0.38}, ${0.10 + rand() * 0.14})`;
+      ctx.lineWidth = 0.8 + rand() * 0.8;
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.quadraticCurveTo(x + lean * 0.4, y - len * 0.6, x + lean, y - len);
+      ctx.stroke();
+    }
+    // ปลายใบรับแสงจาง ๆ ให้มีมิติ
+    for (let i = 0; i < 2200; i++) {
+      const x = rand() * S, y = rand() * S;
+      const green = 110 + rand() * 70;
+      ctx.strokeStyle = `rgba(${green * 0.5}, ${green}, ${green * 0.42}, ${0.10 + rand() * 0.1})`;
+      ctx.lineWidth = 0.7;
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(x + (rand() - 0.5) * 2, y - 3 - rand() * 4);
+      ctx.stroke();
+    }
+    ctx.filter = 'none';
+    const tex = new THREE.CanvasTexture(c);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.anisotropy = 8;
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(90, 90); // tile ≈ 11 หน่วย — เห็นใบหญ้าใกล้ตัว ไกลเป็นพรมเขียว
+    return tex;
+  }
+
   /* ── พื้นดิน ขอบฟ้า และทิศ ─────────────────────────────── */
   _buildHorizon() {
     // ผนังมืดใต้ขอบฟ้า
@@ -373,8 +426,8 @@ export class Planetarium {
     );
     ground.position.y = -R * 0.25 - 2;
     this.group.add(ground);
-    // พื้นเขียวเรียบ ๆ (สว่าง-มืดตามกลางวัน/กลางคืนใน setSky)
-    this.groundMat = new THREE.MeshBasicMaterial({ color: 0x0e1a0c });
+    // พื้นหญ้า texture นิ่ง (สว่าง-มืดตามกลางวัน/กลางคืนใน setSky)
+    this.groundMat = new THREE.MeshBasicMaterial({ map: this._grassTexture() });
     const groundCap = new THREE.Mesh(
       new THREE.CircleGeometry(R * 1.05, 64),
       this.groundMat,
@@ -382,6 +435,27 @@ export class Planetarium {
     groundCap.rotation.x = -Math.PI / 2;
     groundCap.position.y = -2;
     this.group.add(groundCap);
+
+    // เฉดมืดระยะไกล — หญ้าจางเข้าความมืดใกล้ขอบฟ้า (กันลาย tile ซ้ำ)
+    const fc = document.createElement('canvas');
+    fc.width = fc.height = 256;
+    const fctx = fc.getContext('2d');
+    const fg = fctx.createRadialGradient(128, 128, 0, 128, 128, 128);
+    fg.addColorStop(0, 'rgba(2, 5, 3, 0)');
+    fg.addColorStop(0.3, 'rgba(2, 5, 3, 0.2)');
+    fg.addColorStop(0.8, 'rgba(2, 5, 3, 0.75)');
+    fg.addColorStop(1, 'rgba(2, 5, 3, 0.95)');
+    fctx.fillStyle = fg;
+    fctx.fillRect(0, 0, 256, 256);
+    const fade = new THREE.Mesh(
+      new THREE.CircleGeometry(R * 1.05, 64),
+      new THREE.MeshBasicMaterial({
+        map: new THREE.CanvasTexture(fc), transparent: true, depthWrite: false,
+      }),
+    );
+    fade.rotation.x = -Math.PI / 2;
+    fade.position.y = -1.9;
+    this.group.add(fade);
 
     // แสงเรืองขอบฟ้า — ไล่เฉดนุ่มจากล่างขึ้นบน (ไม่เป็นแถบขอบแข็ง)
     const gc = document.createElement('canvas');
@@ -609,9 +683,9 @@ export class Planetarium {
       new THREE.Color(0xff8a3d), new THREE.Color(0x6fb1ea),
       THREE.MathUtils.clamp((sunUp - 0.02) / 0.2, 0, 1));
     this.dayDome.material.opacity = this.dayFactor * 0.88;
-    // พื้นเขียวสว่างขึ้นตอนกลางวัน / กลางคืนหม่นมืด
-    const gb = 0.85 + this.dayFactor * 1.6;
-    this.groundMat.color.setRGB(gb * 0.055, gb * 0.1, gb * 0.047);
+    // พื้นหญ้าสว่างขึ้นตอนกลางวัน / กลางคืนหม่นมืด
+    const gb = 0.9 + this.dayFactor * 1.5;
+    this.groundMat.color.setRGB(gb * 0.92, gb * 1.05, gb * 0.88);
     this.milkyWay.visible = this.dayFactor < 0.5;
     this.dsos.forEach((d) => { d.sprite.material.opacity = 0.85 * (1 - this.dayFactor); });
   }
