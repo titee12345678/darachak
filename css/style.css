@@ -306,12 +306,13 @@ button { font-family: var(--font-display); cursor: pointer; }
   pointer-events: auto;
   position: relative; height: 100%;
   overflow: hidden auto;
+  /* พื้นทึบขึ้นเล็กน้อยแทน backdrop-filter — เบลอฉาก 3D ที่ขยับทุกเฟรม
+     ทำให้แผงสั่นวูบบนมือถือหลายรุ่น */
   background:
-    linear-gradient(160deg, rgba(10, 30, 48, .92), rgba(4, 14, 26, .94));
+    linear-gradient(160deg, rgba(9, 27, 43, .97), rgba(4, 13, 24, .98));
   border: 1px solid var(--holo-dim);
   border-radius: 4px;
   padding: 20px 20px 24px;
-  backdrop-filter: blur(12px);
   box-shadow:
     0 0 0 1px rgba(111, 227, 255, .08),
     0 0 34px rgba(111, 227, 255, .18),
@@ -331,18 +332,11 @@ button { font-family: var(--font-display); cursor: pointer; }
 .holo-frame::before { top: 6px; right: 6px; border-top: 2px solid var(--holo); border-right: 2px solid var(--holo); }
 .holo-frame::after { bottom: 6px; left: 6px; border-bottom: 2px solid var(--holo); border-left: 2px solid var(--holo); }
 
+/* ลายเส้นสแกนแบบนิ่ง — ไม่มีแถบกวาด ไม่มีอะไรขยับ = ไม่มีอะไรกระพริบ */
 .holo-scan {
   position: absolute; inset: 0; pointer-events: none;
   background: repeating-linear-gradient(0deg, rgba(111, 227, 255, .035) 0 1px, transparent 1px 4px);
 }
-.holo-scan::after {
-  content: ""; position: absolute; left: 0; right: 0; top: 0; height: 70px;
-  background: linear-gradient(180deg, transparent, rgba(111, 227, 255, .09), transparent);
-  /* แอนิเมตด้วย transform (GPU) — แอนิเมต top ทำให้ทั้งแผง repaint จนตัวหนังสือกระพริบ */
-  animation: scanline 4.2s linear infinite;
-  will-change: transform;
-}
-@keyframes scanline { from { transform: translateY(-80px); } to { transform: translateY(85vh); } }
 
 /* แถบจับย่อ/ขยาย (โชว์เฉพาะมือถือ) */
 #holo-handle {
@@ -626,6 +620,12 @@ button { font-family: var(--font-display); cursor: pointer; }
   .deck-btn { padding: 8px 13px; }
   #holo-close { width: 34px; height: 34px; font-size: 16px; }
   button { -webkit-tap-highlight-color: transparent; }
+  /* จอสัมผัส: ปิดเบลอพื้นหลังทุกชิ้น — เบลอฉาก 3D ที่ขยับทำให้ UI สั่นวูบ */
+  #mode-tabs, #level-switch, .hud-btn, .deck-group, #drawer-body,
+  #drawer-toggle, #toast, #compass, .obj-label {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
 }
 
 /* มือถือจอแคบ: ป้ายเล็กลง ตัดชื่ออังกฤษ ไม่ให้บังกัน */
