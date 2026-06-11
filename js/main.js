@@ -38,6 +38,8 @@ camera.position.set(0, 55, 130);
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 controls.dampingFactor = 0.06;
+controls.autoRotate = true;        // หน้าแรก: หมุนชมภาพรวมไปเรื่อย ๆ
+controls.autoRotateSpeed = 0.5;    // (หยุดเองอัตโนมัติขณะผู้ใช้ลาก)
 
 /* ── สถานะหลัก ────────────────────────────────────────────── */
 let mode = 'solar';
@@ -110,6 +112,8 @@ ui.onDeselect = () => { if (planetarium) planetarium.deselect(); };
 /* ── โหมดกล้อง ────────────────────────────────────────────── */
 function applySolarCamera() {
   controls.enabled = true;
+  controls.autoRotate = true;       // มุมมองภาพรวม: หมุนชมอัตโนมัติ
+  controls.autoRotateSpeed = 0.5;
   controls.minDistance = 7;
   controls.maxDistance = 700;
   controls.enablePan = true;
@@ -123,6 +127,7 @@ function applySolarCamera() {
 }
 function applySkyCamera() {
   controls.enabled = true;
+  controls.autoRotate = false;
   controls.minDistance = 0.12;
   controls.maxDistance = 0.12;
   controls.enablePan = false;
@@ -225,7 +230,12 @@ function updateHomeFly(dt) {
   const e = 1 - Math.pow(1 - k, 3);
   camera.position.lerpVectors(flyHome.fromPos, HOME_POS, e);
   controls.target.lerpVectors(flyHome.fromTarget, HOME_TARGET, e);
-  if (k >= 1) { flyHome = null; controls.enabled = true; }
+  if (k >= 1) {
+    flyHome = null;
+    controls.enabled = true;
+    controls.autoRotate = true;     // ถึงภาพรวมแล้ว → หมุนชมต่อ
+    controls.autoRotateSpeed = 0.5;
+  }
 }
 
 /* จุดเล็งที่ดันดาวขึ้นครึ่งบนจอ เมื่อ bottom-sheet มือถือเปิดอยู่ */
