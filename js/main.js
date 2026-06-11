@@ -25,6 +25,12 @@ renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.12;
 container.appendChild(renderer.domElement);
 
+// GPU รีเซ็ต/context หลุด → โหลดหน้าใหม่อัตโนมัติ แทนการค้างจอดำ
+renderer.domElement.addEventListener('webglcontextlost', (e) => {
+  e.preventDefault();
+  location.reload();
+});
+
 const labelRenderer = new CSS2DRenderer();
 labelRenderer.setSize(innerWidth, innerHeight);
 $('labels-container').appendChild(labelRenderer.domElement);
@@ -541,27 +547,37 @@ function updateDeclutter(dt) {
 
 /* ── วงจรเรนเดอร์ ─────────────────────────────────────────── */
 const clock = new THREE.Clock();
+let animErrorOnce = false;
 function animate() {
   requestAnimationFrame(animate);
-  const dt = Math.min(clock.getDelta(), 0.05);
-  if (demos?.active) {
-    demos.update(dt);
-  } else if (solar && mode === 'solar') {
-    solar.update(paused ? 0 : dt, paused ? 0 : daysPerSec(), camera);
-    updateFocus(dt);
-    updateHomeFly(dt);
-    updateSimDate(dt);
-    updateDeclutter(dt);
+  try {
+    const dt = Math.min(clock.getDelta(), 0.05);
+    if (demos?.active) {
+      demos.update(dt);
+    } else if (solar && mode === 'solar') {
+      solar.update(paused ? 0 : dt, paused ? 0 : daysPerSec(), camera);
+      updateFocus(dt);
+      updateHomeFly(dt);
+      updateSimDate(dt);
+      updateDeclutter(dt);
+    }
+    if (mode === 'sky') {
+      planetarium.update?.(dt, clock.elapsedTime); // ดาวกะพริบ + ดาวตก
+      updateLookTween(dt);
+      updateCompass();
+    }
+    controls.update();
+    renderer.render(scene, camera);
+    labelRenderer.render(scene, camera);
+    if (demos?.active) demos.renderInset(renderer);
+  } catch (err) {
+    // กันแอปค้างเงียบ: แจ้งครั้งเดียวแล้วเรนเดอร์เฟรมต่อไปตามปกติ
+    if (!animErrorOnce) {
+      animErrorOnce = true;
+      console.error('render loop error:', err);
+      ui.toast('เกิดข้อผิดพลาด — ลองรีเฟรชหน้า (Cmd/Ctrl+Shift+R)', 6000);
+    }
   }
-  if (mode === 'sky') {
-    planetarium.update(dt, clock.elapsedTime); // ดาวกะพริบ + ดาวตก
-    updateLookTween(dt);
-    updateCompass();
-  }
-  controls.update();
-  renderer.render(scene, camera);
-  labelRenderer.render(scene, camera);
-  if (demos?.active) demos.renderInset(renderer);
 }
 
 addEventListener('resize', () => {
