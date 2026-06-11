@@ -15,7 +15,7 @@ const GLYPH_TEX = {
   sun: '2k_sun.jpg', mercury: '2k_mercury.jpg', venus: '2k_venus_atmosphere.jpg',
   earth: '2k_earth_daymap.jpg', mars: '2k_mars.jpg', jupiter: '2k_jupiter.jpg',
   saturn: '2k_saturn.jpg', uranus: '2k_uranus.jpg', neptune: '2k_neptune.jpg',
-  moon: '2k_moon.jpg', ceres: '2k_ceres_fictional.jpg',
+  moon: '2k_moon.jpg', ceres: '2k_ceres_fictional.jpg', pluto: '2k_pluto.jpg',
 };
 /* จุดที่ครอปจากแผนที่ (โลกเลือกฝั่งเอเชีย มองเห็นประเทศไทย) */
 const GLYPH_POS = { earth: '74% 42%', jupiter: '64% 55%', mars: '20% 50%' };

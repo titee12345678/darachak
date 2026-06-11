@@ -46,6 +46,7 @@ const REAL_MAPS = {
   uranus: '2k_uranus.jpg',
   neptune: '2k_neptune.jpg',
   ceres: '2k_ceres_fictional.jpg',
+  pluto: '2k_pluto.jpg', // New Horizons global mosaic จริง
 };
 
 /* noise canvas → DataTexture สำหรับ shader ดวงอาทิตย์ */
@@ -243,7 +244,7 @@ export class SolarSystem {
             ? () => gasGiantTexture(seed, p.tex.kind)
             : () => rockyTexture(seed, p.tex.base, p.tex.craters || 100, p.id === 'mars');
         const map = realTex(REAL_MAPS[p.id], fallback);
-        const rocky = ['mercury', 'mars', 'ceres'].includes(p.id);
+        const rocky = ['mercury', 'mars', 'ceres', 'pluto'].includes(p.id);
         material = new THREE.MeshPhongMaterial({
           map, shininess: rocky ? 2 : 6,
           ...(rocky ? { bumpMap: map, bumpScale: 0.045 } : {}),
