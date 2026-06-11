@@ -60,7 +60,7 @@ button { font-family: var(--font-display); cursor: pointer; }
   white-space: nowrap;
   text-shadow: 0 0 6px rgba(111, 227, 255, .8);
   backdrop-filter: blur(2px);
-  transition: background .2s, border-color .2s, transform .15s;
+  transition: background .2s, border-color .2s, transform .15s, opacity .3s ease;
 }
 .obj-label small { color: var(--ink-dim); font-size: 10px; margin-left: 4px; }
 .obj-label:hover {

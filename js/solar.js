@@ -580,7 +580,8 @@ export class SolarSystem {
     this.labels.forEach((l) => { l.visible = v; });
   }
 
-  /* ── declutter: ซ่อนป้ายที่ทับกันบนจอ (ลำดับสร้าง = ลำดับความสำคัญ) ── */
+  /* ── declutter: ซ่อนป้ายที่ทับกันบนจอ (เรียงตามความสำคัญ)
+     กันกระพริบด้วย hysteresis + fade แทนการหายวับ ── */
   declutterLabels(camera, width, height) {
     if (this.labelsOn === false || !this.group.visible) return;
     const placed = [];
@@ -593,14 +594,23 @@ export class SolarSystem {
         l.visible = false; // อยู่หลังกล้องหรือนอกจอ
         continue;
       }
+      l.visible = true;
       const x = (v.x * 0.5 + 0.5) * width;
       const y = (-v.y * 0.5 + 0.5) * height;
       const w = (l.element.offsetWidth || 70) + 6;
       const h = (l.element.offsetHeight || 20) + 4;
-      const r = { x1: x - w / 2, x2: x + w / 2, y1: y - h / 2, y2: y + h / 2 };
+      // hysteresis: ป้ายที่ซ่อนอยู่ต้องมีที่ว่างเกินพอ (ขยายกรอบ) ถึงโผล่กลับ
+      // ป้ายที่โชว์อยู่ยอมให้เกยกันเล็กน้อย (หดกรอบ) ก่อนจะยอมหลบ
+      const pad = l.userData.shown === false ? 12 : -5;
+      const r = {
+        x1: x - w / 2 - pad, x2: x + w / 2 + pad,
+        y1: y - h / 2 - pad, y2: y + h / 2 + pad,
+      };
       const hit = placed.some((p) => !(r.x2 < p.x1 || r.x1 > p.x2 || r.y2 < p.y1 || r.y1 > p.y2));
-      l.visible = !hit;
-      if (!hit) placed.push(r);
+      l.userData.shown = !hit;
+      l.element.style.opacity = hit ? '0' : '';       // fade ผ่าน CSS transition
+      l.element.style.pointerEvents = hit ? 'none' : '';
+      if (!hit) placed.push({ x1: x - w / 2, x2: x + w / 2, y1: y - h / 2, y2: y + h / 2 });
     }
   }
   setVisible(v) {
