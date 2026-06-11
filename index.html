@@ -76,6 +76,9 @@
     <button id="orbit-toggle" class="deck-btn on" title="เส้นวงโคจร">วงโคจร</button>
     <button id="label-toggle" class="deck-btn on" title="ป้ายชื่อ">ป้ายชื่อ</button>
     <button id="reset-cam" class="deck-btn" title="บินกลับมุมมองภาพรวมทั้งระบบ">⤢ ภาพรวม</button>
+    <div class="deck-sep"></div>
+    <button id="tour-btn" class="deck-btn gold" title="ทัวร์นำชมอัตโนมัติพร้อมเสียงบรรยาย">🚀 ทัวร์</button>
+    <button id="demo-btn" class="deck-btn gold" title="โหมดสาธิตสำหรับการสอน">🧪 สาธิต</button>
   </div>
 
   <div class="deck-group hidden" id="deck-sky">
@@ -161,6 +164,36 @@
       <button id="quiz-again" class="quiz-primary">ทำอีกครั้ง</button>
     </div>
   </div>
+</div>
+
+<!-- ── เมนูสาธิต ──────────────────────────────────── -->
+<div id="demo-menu" class="hidden">
+  <h3>🧪 โหมดสาธิตสำหรับการสอน</h3>
+  <button data-demo="phases">🌙 เฟสดวงจันทร์ (ข้างขึ้น-ข้างแรม)</button>
+  <button data-demo="seasons">🌏 ฤดูกาลจากแกนโลกเอียง</button>
+  <button data-demo="solar-eclipse">🌑 สุริยุปราคา</button>
+  <button data-demo="lunar-eclipse">🔴 จันทรุปราคา (ราหูอมจันทร์)</button>
+  <button data-demo="compare">⚖️ เปรียบเทียบขนาดดาวจริง</button>
+  <button id="demo-menu-close" class="demo-menu-close">ปิด</button>
+</div>
+
+<!-- ── แผงควบคุมสาธิต ─────────────────────────────── -->
+<div id="demo-panel" class="hidden">
+  <h3 id="demo-title">—</h3>
+  <p id="demo-caption">—</p>
+  <span id="demo-slider-label" class="demo-slider-label">—</span>
+  <input type="range" id="demo-slider" min="0" max="100" step="1" value="0">
+  <button id="demo-exit">✕ ออกจากการสาธิต</button>
+</div>
+<div id="inset-frame" class="hidden"><span>🔭 ดวงจันทร์ที่เห็นจากโลก</span></div>
+
+<!-- ── แถบทัวร์นำชม ───────────────────────────────── -->
+<div id="tour-bar" class="hidden">
+  <span id="tour-counter">จุดที่ 1/10</span>
+  <strong id="tour-name">—</strong>
+  <button id="tour-prev" title="จุดก่อนหน้า">⏮</button>
+  <button id="tour-next" title="จุดถัดไป">⏭</button>
+  <button id="tour-stop" title="จบทัวร์">✕ จบทัวร์</button>
 </div>
 
 <!-- ── Toast / compass / credit ───────────────────── -->

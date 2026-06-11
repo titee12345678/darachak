@@ -233,6 +233,15 @@ export class UI {
       group('วัตถุท้องฟ้าลึก');
       DSOS.forEach((d) => add(d));
     }
+    // ลิงก์สำหรับครู
+    group('สำหรับครู');
+    [['📘 คู่มือครู + แผนการสอน', 'teacher.html'], ['🖨 สร้างใบงานพิมพ์ได้', 'worksheet.html']]
+      .forEach(([t, href]) => {
+        const li = document.createElement('li');
+        li.innerHTML = `<span class="dot" style="color:#ffb454;background:#ffb454"></span>${t}`;
+        li.addEventListener('click', () => window.open(href, '_blank'));
+        list.appendChild(li);
+      });
   }
 
   toast(msg, ms = 2600) {

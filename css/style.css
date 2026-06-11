@@ -519,6 +519,88 @@ button { font-family: var(--font-display); cursor: pointer; }
 
 .hidden { display: none !important; }
 
+/* ═══ โหมดสาธิต + ทัวร์ ═══════════════════════════ */
+.deck-btn.gold { color: var(--amber); border-color: rgba(255, 180, 84, .4); }
+.deck-btn.gold:hover { background: rgba(255, 180, 84, .14); border-color: var(--amber); }
+
+#demo-menu {
+  position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  z-index: 40; width: min(360px, calc(100vw - 32px));
+  background: linear-gradient(165deg, rgba(12, 32, 52, .98), rgba(4, 12, 24, .99));
+  border: 1px solid var(--holo-dim); border-radius: 8px;
+  padding: 22px;
+  box-shadow: 0 0 50px rgba(111, 227, 255, .25);
+  display: flex; flex-direction: column; gap: 9px;
+}
+#demo-menu h3 {
+  font-family: var(--font-display); font-size: 17px; text-align: center;
+  margin-bottom: 8px; color: var(--amber);
+}
+#demo-menu button {
+  background: rgba(111, 227, 255, .06);
+  border: 1px solid var(--holo-faint); border-radius: 6px;
+  color: var(--ink); font-size: 14.5px; text-align: left;
+  padding: 12px 15px; transition: all .15s;
+}
+#demo-menu button:hover { background: rgba(111, 227, 255, .15); border-color: var(--holo-dim); }
+#demo-menu .demo-menu-close { text-align: center; color: var(--ink-dim); margin-top: 4px; }
+
+#demo-panel {
+  position: fixed; left: 50%; bottom: 12px; transform: translateX(-50%);
+  z-index: 30; width: min(560px, calc(100vw - 20px));
+  background: linear-gradient(165deg, rgba(10, 28, 46, .97), rgba(4, 12, 24, .98));
+  border: 1px solid var(--holo-dim); border-radius: 10px;
+  padding: 14px 18px;
+  box-shadow: 0 6px 30px rgba(0, 0, 0, .6);
+}
+#demo-panel h3 { font-family: var(--font-display); font-size: 15.5px; color: var(--amber); margin-bottom: 7px; }
+#demo-panel p { font-size: 13.5px; line-height: 1.65; min-height: 56px; margin-bottom: 8px; }
+#demo-panel p b { color: var(--amber); }
+.demo-slider-label { font-size: 11.5px; color: var(--ink-dim); display: block; margin-bottom: 3px; }
+#demo-slider { width: 100%; accent-color: var(--amber); }
+#demo-exit {
+  margin-top: 9px; width: 100%;
+  background: rgba(255, 107, 122, .1); border: 1px solid rgba(255, 107, 122, .4);
+  border-radius: 5px; color: var(--danger); font-size: 13px; padding: 7px;
+}
+#demo-exit:hover { background: rgba(255, 107, 122, .2); }
+
+#inset-frame {
+  position: fixed; bottom: 14px; z-index: 29;
+  border: 1px solid var(--amber); border-radius: 4px;
+  pointer-events: none;
+  box-shadow: 0 0 18px rgba(255, 180, 84, .35);
+}
+#inset-frame span {
+  position: absolute; top: -24px; left: 50%; transform: translateX(-50%);
+  font-family: var(--font-display); font-size: 11.5px; color: var(--amber);
+  white-space: nowrap; text-shadow: 0 1px 4px #000;
+}
+
+#tour-bar {
+  position: fixed; top: 72px; left: 50%; transform: translateX(-50%);
+  z-index: 30;
+  display: flex; align-items: center; gap: 12px;
+  background: linear-gradient(165deg, rgba(12, 32, 52, .97), rgba(4, 12, 24, .98));
+  border: 1px solid var(--amber); border-radius: 10px;
+  padding: 10px 18px;
+  box-shadow: 0 0 26px rgba(255, 180, 84, .3);
+}
+#tour-counter { font-family: var(--font-mono); font-size: 11px; letter-spacing: .15em; color: var(--ink-dim); }
+#tour-name { font-family: var(--font-display); font-size: 17px; color: var(--amber); }
+#tour-bar button {
+  background: rgba(111, 227, 255, .08); border: 1px solid var(--holo-faint);
+  border-radius: 5px; color: var(--ink); font-size: 13px; padding: 6px 11px;
+}
+#tour-bar button:hover { background: rgba(111, 227, 255, .18); }
+#tour-stop { color: var(--danger) !important; }
+
+@media (max-width: 600px) {
+  #demo-panel { bottom: 6px; padding: 11px 13px; }
+  #demo-panel p { font-size: 12.5px; min-height: 48px; }
+  #tour-bar { top: 104px; padding: 8px 12px; gap: 8px; width: max-content; max-width: calc(100vw - 16px); flex-wrap: wrap; justify-content: center; }
+}
+
 /* ═══ Toast & compass ═════════════════════════════ */
 #toast {
   position: fixed; top: 76px; left: 50%; transform: translateX(-50%);

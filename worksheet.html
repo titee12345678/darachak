@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>สร้างใบงาน — ระบบสุริยะ 3 มิติ</title>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: "Sarabun", sans-serif; color: #1a2733; background: #f4f7fa; line-height: 1.7; }
+  .controls {
+    max-width: 800px; margin: 0 auto; padding: 18px 24px;
+    background: #0e5e8a; color: #fff; border-radius: 0 0 12px 12px;
+    display: flex; gap: 14px; align-items: center; flex-wrap: wrap;
+  }
+  .controls label { font-size: 14.5px; }
+  .controls select, .controls input { font-family: "Sarabun"; font-size: 14.5px; padding: 5px 9px; border-radius: 5px; border: none; }
+  .controls button { font-family: "Sarabun"; font-weight: 600; font-size: 14.5px; padding: 8px 18px; border-radius: 6px; border: none; cursor: pointer; background: #ffb454; }
+  .controls a { color: #cfe9ff; font-size: 13.5px; margin-left: auto; }
+  .sheet { max-width: 800px; margin: 18px auto; background: #fff; padding: 40px 46px; box-shadow: 0 2px 12px rgba(0,0,0,.08); }
+  h1 { font-family: "Chakra Petch"; font-size: 22px; text-align: center; }
+  .meta { display: flex; justify-content: space-between; border-bottom: 2px solid #1a2733; padding: 14px 0 10px; margin-bottom: 18px; font-size: 15px; }
+  .meta span { border-bottom: 1px dotted #888; min-width: 150px; display: inline-block; }
+  ol.qs { padding-left: 26px; }
+  ol.qs > li { margin-bottom: 16px; font-size: 15.5px; font-weight: 600; }
+  .choices { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 24px; font-weight: 400; margin-top: 6px; font-size: 15px; }
+  .anskey { page-break-before: always; margin-top: 30px; }
+  .anskey h2 { font-family: "Chakra Petch"; font-size: 18px; margin-bottom: 10px; }
+  .anskey li { font-size: 14.5px; margin-bottom: 8px; }
+  .anskey b { color: #0e5e8a; }
+  @media print { .controls { display: none; } .sheet { box-shadow: none; margin: 0; max-width: none; } body { background: #fff; } }
+</style>
+</head>
+<body>
+<div class="controls">
+  <label>ระดับ:
+    <select id="level">
+      <option value="kid">เด็ก (ประถม)</option>
+      <option value="student" selected>นักเรียน (ม.ต้น)</option>
+      <option value="expert">ผู้เชี่ยวชาญ (ม.ปลาย)</option>
+    </select>
+  </label>
+  <label>จำนวนข้อ: <input id="count" type="number" value="10" min="3" max="20" style="width:60px"></label>
+  <button id="shuffle">🎲 สุ่มชุดใหม่</button>
+  <button onclick="print()">🖨 พิมพ์ใบงาน</button>
+  <a href="teacher.html">← กลับคู่มือครู</a>
+</div>
+
+<div class="sheet">
+  <h1>ใบงาน เรื่อง ระบบสุริยะและดาราศาสตร์ <span id="level-name"></span></h1>
+  <div class="meta">
+    <div>ชื่อ-สกุล <span></span></div>
+    <div>ชั้น <span style="min-width:70px"></span></div>
+    <div>เลขที่ <span style="min-width:50px"></span></div>
+    <div>วันที่ <span style="min-width:110px"></span></div>
+  </div>
+  <p style="font-size:14.5px;margin-bottom:14px"><b>คำชี้แจง:</b> ให้นักเรียนเลือกคำตอบที่ถูกต้องที่สุด แล้ววงกลมตัวอักษรหน้าคำตอบ (สำรวจเพิ่มเติมได้ในแอป "ระบบสุริยะ 3 มิติ")</p>
+  <ol class="qs" id="questions"></ol>
+
+  <div class="anskey">
+    <h2>🔑 เฉลย (สำหรับครู)</h2>
+    <ol id="answers"></ol>
+  </div>
+</div>
+
+<script type="module">
+import { QUIZ_BANK, LEVEL_NAMES } from './js/data.js';
+
+const $ = (id) => document.getElementById(id);
+const THAI_ABC = ['ก', 'ข', 'ค', 'ง'];
+
+function generate() {
+  const level = $('level').value;
+  const n = Math.min(+$('count').value || 10, QUIZ_BANK[level].length);
+  $('level-name').textContent = `(ระดับ${LEVEL_NAMES[level]})`;
+  const qs = [...QUIZ_BANK[level]].sort(() => Math.random() - 0.5).slice(0, n);
+  $('questions').innerHTML = qs.map((q) => {
+    const order = q.c.map((_, i) => i).sort(() => Math.random() - 0.5);
+    q._order = order;
+    return `<li>${q.q}<div class="choices">${
+      order.map((ci, k) => `<div>${THAI_ABC[k]}. ${q.c[ci]}</div>`).join('')
+    }</div></li>`;
+  }).join('');
+  $('answers').innerHTML = qs.map((q) => {
+    const k = q._order.indexOf(q.a);
+    return `<li><b>${THAI_ABC[k]}. ${q.c[q.a]}</b> — ${q.x}</li>`;
+  }).join('');
+}
+$('shuffle').addEventListener('click', generate);
+$('level').addEventListener('change', generate);
+$('count').addEventListener('change', generate);
+generate();
+</script>
+</body>
+</html>
