@@ -63,7 +63,8 @@ export class Tour {
         if (this.active && this.index === i) this.next();
       }, waitMore + 1800);
     };
-    const text = `${o.nameTh}. ${o.speech || o.fact || ''}`;
+    // speech ขึ้นต้นด้วยชื่อดาวอยู่แล้ว — เติมชื่อเฉพาะตอนใช้ fact สำรอง
+    const text = o.speech || `${o.nameTh}. ${o.fact || ''}`;
     const utter = new SpeechSynthesisUtterance(text);
     utter.lang = 'th-TH';
     utter.rate = 0.95;

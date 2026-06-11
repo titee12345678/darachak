@@ -183,8 +183,8 @@ export class UI {
     if (this.speaking) { this.stopSpeak(); return; }
     const o = REGISTRY.get(this.currentId);
     if (!o) return;
-    let text = `${o.nameTh}. `;
-    text += o.speech || o.fact || o.info || '';
+    // speech ขึ้นต้นด้วยชื่อดาวอยู่แล้ว — เติมชื่อเฉพาะตอนใช้ fact/info สำรอง
+    let text = o.speech || `${o.nameTh}. ${o.fact || o.info || ''}`;
     if (o.kind === 'constellation') text += ` มองเห็นได้ใน${o.season} ทาง${o.direction}`;
     const utter = new SpeechSynthesisUtterance(text);
     utter.lang = 'th-TH';
