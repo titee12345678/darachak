@@ -189,7 +189,7 @@ export const PLANETS = [
     radius: 1.7, period: 30589, rotation: -0.72, tilt: 97.8,
     color: '#9ad9e0',
     tex: { kind: 'uranus' },
-    rings: { inner: 1.6, outer: 1.95, faint: true },
+    rings: { inner: 1.64, outer: 1.78, faint: true },
     stats: [
       ['ระยะห่างจากดวงอาทิตย์', '<b>2,872.5</b> ล้านกิโลเมตร'],
       ['เส้นผ่านศูนย์กลาง', '<b>51,118</b> กม.'],

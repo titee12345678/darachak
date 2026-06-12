@@ -245,9 +245,15 @@ export class SolarSystem {
             : () => rockyTexture(seed, p.tex.base, p.tex.craters || 100, p.id === 'mars');
         const map = realTex(REAL_MAPS[p.id], fallback);
         const rocky = ['mercury', 'mars', 'ceres', 'pluto'].includes(p.id);
+        // ดาววงนอกแสงอาทิตย์ตกน้อยจนคล้ำ — เติมเรืองในตัวเลียนแบบ
+        // การเปิดรับแสงของภาพถ่ายจริง ให้สีตรงภาพ
+        const farDim = ['uranus', 'neptune', 'pluto'].includes(p.id);
         material = new THREE.MeshPhongMaterial({
           map, shininess: rocky ? 2 : 6,
           ...(rocky ? { bumpMap: map, bumpScale: 0.045 } : {}),
+          ...(farDim ? {
+            emissive: new THREE.Color(0xffffff), emissiveMap: map, emissiveIntensity: 0.38,
+          } : {}),
         });
       } else {
         material = new THREE.MeshPhongMaterial({
@@ -284,23 +290,29 @@ export class SolarSystem {
           v3.fromBufferAttribute(pos, i);
           uv.setXY(i, (v3.length() - inner) / (outer - inner), 0.5);
         }
-        const ringMat = new THREE.MeshBasicMaterial({
-          map: p.id === 'saturn'
-            ? realTex('2k_saturn_ring_alpha.png', () => ringTexture(seed + 5, false))
-            : ringTexture(seed + 5, !!p.rings.faint),
-          side: THREE.DoubleSide, transparent: true, depthWrite: false,
-        });
+        const ringMat = p.rings.faint
+          // วงแหวนยูเรนัสจริงบางเฉียบสีถ่านมืด — แทบมองไม่เห็น
+          ? new THREE.MeshBasicMaterial({
+            color: 0x5a626a, side: THREE.DoubleSide,
+            transparent: true, opacity: 0.22, depthWrite: false,
+          })
+          : new THREE.MeshBasicMaterial({
+            map: realTex('2k_saturn_ring_alpha.png', () => ringTexture(seed + 5, false)),
+            side: THREE.DoubleSide, transparent: true, depthWrite: false,
+          });
         const ring = new THREE.Mesh(ringGeo, ringMat);
         ring.rotation.x = -Math.PI / 2;
         tiltGroup.add(ring);
-        // เงาจาง ๆ ใต้วงแหวน (แสงสะท้อน)
-        const glow = new THREE.Mesh(ringGeo.clone(), new THREE.MeshBasicMaterial({
-          map: ringMat.map, side: THREE.DoubleSide, transparent: true,
-          opacity: 0.25, blending: THREE.AdditiveBlending, depthWrite: false,
-        }));
-        glow.rotation.x = -Math.PI / 2;
-        glow.position.y = -0.02;
-        tiltGroup.add(glow);
+        if (!p.rings.faint) {
+          // แสงสะท้อนจาง ๆ ใต้วงแหวน (เฉพาะดาวเสาร์)
+          const glow = new THREE.Mesh(ringGeo.clone(), new THREE.MeshBasicMaterial({
+            map: ringMat.map, side: THREE.DoubleSide, transparent: true,
+            opacity: 0.25, blending: THREE.AdditiveBlending, depthWrite: false,
+          }));
+          glow.rotation.x = -Math.PI / 2;
+          glow.position.y = -0.02;
+          tiltGroup.add(glow);
+        }
       }
 
       // โลก: เมฆ + ชั้นบรรยากาศ + ดวงจันทร์
