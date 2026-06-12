@@ -325,12 +325,6 @@ button { font-family: var(--font-display); cursor: pointer; }
   to   { opacity: 1; transform: none; filter: none; }
 }
 
-/* corner brackets */
-.holo-frame::before, .holo-frame::after {
-  content: ""; position: absolute; width: 26px; height: 26px; pointer-events: none;
-}
-.holo-frame::before { top: 6px; right: 6px; border-top: 2px solid var(--holo); border-right: 2px solid var(--holo); }
-.holo-frame::after { bottom: 6px; left: 6px; border-bottom: 2px solid var(--holo); border-left: 2px solid var(--holo); }
 
 /* ลายเส้นสแกนแบบนิ่ง — ไม่มีแถบกวาด ไม่มีอะไรขยับ = ไม่มีอะไรกระพริบ */
 .holo-scan {
@@ -354,7 +348,7 @@ button { font-family: var(--font-display); cursor: pointer; }
 }
 
 #holo-close {
-  position: absolute; top: 10px; right: 40px; z-index: 2;
+  position: absolute; top: 10px; right: 12px; z-index: 2;
   background: none; border: 1px solid var(--holo-faint); border-radius: 4px;
   color: var(--ink-dim); font-size: 13px; width: 26px; height: 26px;
   transition: all .2s;
