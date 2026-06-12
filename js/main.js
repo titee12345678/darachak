@@ -654,4 +654,21 @@ addEventListener('resize', () => {
   labelRenderer.setSize(innerWidth, innerHeight);
 });
 
-boot().then(animate);
+/* ถ้า boot ล้มเหลว — โชว์สาเหตุบนหน้าโหลด แทนการค้างเงียบ */
+function showBootError(msg) {
+  const st = document.getElementById('loader-status');
+  if (st) {
+    st.textContent = `⚠ เกิดข้อผิดพลาด: ${msg} — ลองกด Cmd/Ctrl+Shift+R`;
+    st.style.color = '#ff6b7a';
+  }
+}
+window.addEventListener('error', (e) => {
+  if (!document.getElementById('loader')?.classList.contains('done')) {
+    showBootError(e.message);
+  }
+});
+
+boot().then(animate).catch((err) => {
+  console.error('boot failed:', err);
+  showBootError(err.message);
+});
