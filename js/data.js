@@ -7,7 +7,7 @@
 // ── ระบบสุริยะ ─────────────────────────────────────────────
 // dist/radius are scene units (compressed museum scale), period in Earth-days
 export const SUN = {
-  id: 'sun', type: 'star',
+  id: 'sun', photo: 'img/sun.jpg', type: 'star',
   nameTh: 'ดวงอาทิตย์', nameEn: 'The Sun', read: 'อ่านว่า "เดอะ-ซัน"',
   radius: 6.2,
   color: '#ffb454',
@@ -32,7 +32,7 @@ export const SUN = {
 
 export const PLANETS = [
   {
-    id: 'mercury', type: 'planet',
+    id: 'mercury', photo: 'img/mercury.jpg', type: 'planet',
     nameTh: 'ดาวพุธ', nameEn: 'Mercury', read: 'อ่านว่า "เมอร์-คิว-รี"',
     radius: 0.42, period: 88, rotation: 58.6, tilt: 0.03,
     color: '#9c8e82',
@@ -56,7 +56,7 @@ export const PLANETS = [
     speech: 'ดาวพุธ เป็นดาวเคราะห์ที่อยู่ใกล้ดวงอาทิตย์ที่สุด และมีขนาดเล็กที่สุดในระบบสุริยะ ใช้เวลาโคจรรอบดวงอาทิตย์เพียงแปดสิบแปดวัน',
   },
   {
-    id: 'venus', type: 'planet',
+    id: 'venus', photo: 'img/venus.jpg', type: 'planet',
     nameTh: 'ดาวศุกร์', nameEn: 'Venus', read: 'อ่านว่า "วี-นัส"',
     radius: 0.95, period: 224.7, rotation: -243, tilt: 177.4,
     color: '#e8c87e',
@@ -81,7 +81,7 @@ export const PLANETS = [
     speech: 'ดาวศุกร์ เป็นดาวเคราะห์ที่ร้อนที่สุดในระบบสุริยะ มีอุณหภูมิสูงถึงสี่ร้อยหกสิบสี่องศาเซลเซียส คนไทยเรียกว่าดาวประจำเมือง',
   },
   {
-    id: 'earth', type: 'planet',
+    id: 'earth', photo: 'img/earth.jpg', type: 'planet',
     nameTh: 'โลก', nameEn: 'Earth', read: 'อ่านว่า "เอิร์ธ"',
     radius: 1.0, period: 365.25, rotation: 1, tilt: 23.4,
     color: '#5d9be0',
@@ -107,7 +107,7 @@ export const PLANETS = [
     speech: 'โลก คือบ้านของเรา เป็นดาวเคราะห์ดวงเดียวในระบบสุริยะที่พบสิ่งมีชีวิต มีน้ำปกคลุมร้อยละเจ็ดสิบเอ็ดของพื้นผิว และมีดวงจันทร์หนึ่งดวง',
   },
   {
-    id: 'mars', type: 'planet',
+    id: 'mars', photo: 'img/mars.jpg', type: 'planet',
     nameTh: 'ดาวอังคาร', nameEn: 'Mars', read: 'อ่านว่า "มาร์ส"',
     radius: 0.55, period: 687, rotation: 1.03, tilt: 25.2,
     color: '#d96f4a',
@@ -132,7 +132,7 @@ export const PLANETS = [
     speech: 'ดาวอังคาร หรือดาวเคราะห์สีแดง มีภูเขาไฟที่ใหญ่ที่สุดในระบบสุริยะ และมีดวงจันทร์บริวารสองดวง คือโฟบอสและดีมอส',
   },
   {
-    id: 'jupiter', type: 'planet',
+    id: 'jupiter', photo: 'img/jupiter.jpg', type: 'planet',
     nameTh: 'ดาวพฤหัสบดี', nameEn: 'Jupiter', read: 'อ่านว่า "จู-ปิ-เตอร์"',
     radius: 3.6, period: 4331, rotation: 0.41, tilt: 3.1,
     color: '#d8a576',
@@ -157,7 +157,7 @@ export const PLANETS = [
     speech: 'ดาวพฤหัสบดี เป็นดาวเคราะห์ที่ใหญ่ที่สุดในระบบสุริยะ มีจุดแดงใหญ่ซึ่งเป็นพายุยักษ์ที่หมุนวนมานานกว่าสามร้อยห้าสิบปี และมีดวงจันทร์บริวารถึงเก้าสิบห้าดวง',
   },
   {
-    id: 'saturn', type: 'planet',
+    id: 'saturn', photo: 'img/saturn.jpg', type: 'planet',
     nameTh: 'ดาวเสาร์', nameEn: 'Saturn', read: 'อ่านว่า "แซท-เทิร์น"',
     radius: 3.1, period: 10747, rotation: 0.45, tilt: 26.7,
     color: '#e3cb9a',
@@ -183,7 +183,7 @@ export const PLANETS = [
     speech: 'ดาวเสาร์ มีวงแหวนที่สวยงามที่สุดในระบบสุริยะ ประกอบด้วยก้อนน้ำแข็งนับล้านล้านชิ้น และมีดวงจันทร์บริวารมากที่สุดถึงหนึ่งร้อยสี่สิบหกดวง',
   },
   {
-    id: 'uranus', type: 'planet',
+    id: 'uranus', photo: 'img/uranus.jpg', type: 'planet',
     nameTh: 'ดาวยูเรนัส', nameEn: 'Uranus', read: 'อ่านว่า "ยู-เรอ-นัส"',
     radius: 1.7, period: 30589, rotation: -0.72, tilt: 97.8,
     color: '#9ad9e0',
@@ -208,7 +208,7 @@ export const PLANETS = [
     speech: 'ดาวยูเรนัส เป็นดาวเคราะห์ที่หมุนรอบตัวเองในแนวตะแคง มีสีฟ้าอมเขียวจากก๊าซมีเทน และใช้เวลาโคจรรอบดวงอาทิตย์นานถึงแปดสิบสี่ปี',
   },
   {
-    id: 'neptune', type: 'planet',
+    id: 'neptune', photo: 'img/neptune.jpg', type: 'planet',
     nameTh: 'ดาวเนปจูน', nameEn: 'Neptune', read: 'อ่านว่า "เนป-จูน"',
     radius: 1.65, period: 59800, rotation: 0.67, tilt: 28.3,
     color: '#4a6fe3',
@@ -235,7 +235,7 @@ export const PLANETS = [
 
 export const DWARF_PLANETS = [
   {
-    id: 'ceres', type: 'dwarf',
+    id: 'ceres', photo: 'img/ceres.jpg', type: 'dwarf',
     nameTh: 'ดาวซีรีส', nameEn: 'Ceres (Dwarf Planet)', read: 'อ่านว่า "ซี-รีส"',
     radius: 0.22, period: 1680, rotation: 0.38, tilt: 4,
     color: '#9a948c',
@@ -289,7 +289,7 @@ export const DWARF_PLANETS = [
 ];
 
 export const COMET = {
-  id: 'comet', type: 'comet',
+  id: 'comet', photo: 'img/comet.jpg', type: 'comet',
   nameTh: 'ดาวหางฮัลเลย์', nameEn: "Halley's Comet", read: 'อ่านว่า "ฮัล-เลย์"',
   color: '#bfe8ff',
   stats: [
@@ -305,7 +305,7 @@ export const COMET = {
 };
 
 export const EARTH_MOON = {
-  id: 'moon', type: 'moon',
+  id: 'moon', photo: 'img/moon.jpg', type: 'moon',
   nameTh: 'ดวงจันทร์', nameEn: 'The Moon', read: 'อ่านว่า "เดอะ-มูน"',
   dist: 2.1, radius: 0.27, period: 27.3,
   color: '#cfcfcf',
@@ -330,7 +330,7 @@ export const EARTH_MOON = {
 /* ── ดวงจันทร์บริวารเด่น (คลิกได้ในฉาก) ───────────────────── */
 export const MAJOR_MOONS = [
   {
-    id: 'io', parent: 'jupiter', orbitIndex: 0, period: 1.77, type: 'moon',
+    id: 'io', photo: 'img/io.jpg', parent: 'jupiter', orbitIndex: 0, period: 1.77, type: 'moon',
     nameTh: 'ไอโอ', nameEn: 'Io', read: 'อ่านว่า "ไอ-โอ"',
     radius: 0.12, color: '#e8d44f', gravity: 0.183,
     stats: [
@@ -344,7 +344,7 @@ export const MAJOR_MOONS = [
     speech: 'ไอโอ ดวงจันทร์ของดาวพฤหัสบดี มีภูเขาไฟมากที่สุดในระบบสุริยะ กว่าสี่ร้อยลูก',
   },
   {
-    id: 'europa', parent: 'jupiter', orbitIndex: 1, period: 3.55, type: 'moon',
+    id: 'europa', photo: 'img/europa.jpg', parent: 'jupiter', orbitIndex: 1, period: 3.55, type: 'moon',
     nameTh: 'ยูโรปา', nameEn: 'Europa', read: 'อ่านว่า "ยู-โร-ปา"',
     radius: 0.10, color: '#d8c9b4', gravity: 0.134,
     stats: [
@@ -358,7 +358,7 @@ export const MAJOR_MOONS = [
     speech: 'ยูโรปา ดวงจันทร์น้ำแข็งของดาวพฤหัสบดี ใต้พื้นผิวมีมหาสมุทรขนาดใหญ่ อาจมีสิ่งมีชีวิตอาศัยอยู่',
   },
   {
-    id: 'ganymede', parent: 'jupiter', orbitIndex: 2, period: 7.15, type: 'moon',
+    id: 'ganymede', photo: 'img/ganymede.jpg', parent: 'jupiter', orbitIndex: 2, period: 7.15, type: 'moon',
     nameTh: 'แกนีมีด', nameEn: 'Ganymede', read: 'อ่านว่า "แกน-นี-มีด"',
     radius: 0.16, color: '#a89c8e', gravity: 0.146,
     stats: [
@@ -372,7 +372,7 @@ export const MAJOR_MOONS = [
     speech: 'แกนีมีด ดวงจันทร์ที่ใหญ่ที่สุดในระบบสุริยะ ใหญ่กว่าดาวพุธ และมีสนามแม่เหล็กของตัวเอง',
   },
   {
-    id: 'callisto', parent: 'jupiter', orbitIndex: 3, period: 16.69, type: 'moon',
+    id: 'callisto', photo: 'img/callisto.jpg', parent: 'jupiter', orbitIndex: 3, period: 16.69, type: 'moon',
     nameTh: 'คัลลิสโต', nameEn: 'Callisto', read: 'อ่านว่า "คัล-ลิส-โต"',
     radius: 0.14, color: '#7d7468', gravity: 0.126,
     stats: [
@@ -386,7 +386,7 @@ export const MAJOR_MOONS = [
     speech: 'คัลลิสโต ดวงจันทร์ของดาวพฤหัสบดี มีพื้นผิวเก่าแก่และหลุมอุกกาบาตหนาแน่นที่สุดในระบบสุริยะ',
   },
   {
-    id: 'titan', parent: 'saturn', orbitIndex: 0, period: 15.95, type: 'moon',
+    id: 'titan', photo: 'img/titan.jpg', parent: 'saturn', orbitIndex: 0, period: 15.95, type: 'moon',
     nameTh: 'ไททัน', nameEn: 'Titan', read: 'อ่านว่า "ไท-ทัน"',
     radius: 0.16, color: '#d9a441', gravity: 0.138,
     stats: [
@@ -402,7 +402,7 @@ export const MAJOR_MOONS = [
 ];
 
 export const ASTEROID_BELT_INFO = {
-  id: 'belt', type: 'belt',
+  id: 'belt', photo: 'img/belt.jpg', type: 'belt',
   nameTh: 'แถบดาวเคราะห์น้อย', nameEn: 'Asteroid Belt', read: 'อ่านว่า "แอส-เตอ-รอยด์-เบลท์"',
   stats: [
     ['ตำแหน่ง', 'ระหว่างดาวอังคารกับดาวพฤหัสบดี'],
@@ -419,7 +419,7 @@ export const ASTEROID_BELT_INFO = {
 /* ── หลุมดำ (โหมดหลุมดำ 3D) ────────────────────────────────── */
 export const BLACKHOLE_OBJECTS = [
   {
-    id: 'bh-core', world: 'bh',
+    id: 'bh-core', photo: 'img/bh-core.jpg', world: 'bh',
     nameTh: 'เส้นขอบฟ้าเหตุการณ์', nameEn: 'Event Horizon',
     color: '#1a1a2e',
     stats: [
@@ -434,7 +434,7 @@ export const BLACKHOLE_OBJECTS = [
     speech: 'เส้นขอบฟ้าเหตุการณ์ คือพรมแดนของหลุมดำ ที่ซึ่งแม้แต่แสงก็ไม่สามารถหนีออกมาได้ และเวลาเดินช้าลงอย่างมหาศาล',
   },
   {
-    id: 'bh-disk', world: 'bh',
+    id: 'bh-disk', photo: 'img/bh-disk.jpg', world: 'bh',
     nameTh: 'จานพอกพูนมวล', nameEn: 'Accretion Disk',
     color: '#ff9a3d',
     stats: [
@@ -463,7 +463,7 @@ export const BLACKHOLE_OBJECTS = [
     speech: 'วงแหวนโฟตอน คือแสงที่ถูกแรงโน้มถ่วงบิดให้โคจรวนรอบหลุมดำ มนุษย์ถ่ายภาพได้จริงครั้งแรกในปีพุทธศักราชสองพันห้าร้อยหกสิบสอง',
   },
   {
-    id: 'bh-jet', world: 'bh',
+    id: 'bh-jet', photo: 'img/bh-jet.jpg', world: 'bh',
     nameTh: 'เจ็ตสัมพัทธภาพ', nameEn: 'Relativistic Jet',
     color: '#8fc8ff',
     stats: [
@@ -492,7 +492,7 @@ export const BLACKHOLE_OBJECTS = [
     speech: 'หลุมดำมีหลายชนิด ตั้งแต่หลุมดำมวลดาวฤกษ์ที่เกิดจากซูเปอร์โนวา ไปจนถึงหลุมดำมวลยิ่งยวดใจกลางกาแล็กซี',
   },
   {
-    id: 'bh-sgra', world: 'bh',
+    id: 'bh-sgra', photo: 'img/bh-sgra.jpg', world: 'bh',
     nameTh: 'แซจิทาเรียส เอ-สตาร์ (ของเรา)', nameEn: 'Sagittarius A*',
     color: '#ffb454',
     stats: [
@@ -507,7 +507,7 @@ export const BLACKHOLE_OBJECTS = [
     speech: 'แซจิทาเรียส เอสตาร์ คือหลุมดำมวลยิ่งยวดใจกลางทางช้างเผือกของเรา หนักกว่าดวงอาทิตย์สี่ล้านสามแสนเท่า อยู่ห่างออกไปสองหมื่นหกพันปีแสง',
   },
   {
-    id: 'bh-m87', world: 'bh',
+    id: 'bh-m87', photo: 'img/bh-m87.jpg', world: 'bh',
     nameTh: 'เอ็ม 87* (ภาพแรกของโลก)', nameEn: 'M87*',
     color: '#ff7a4d',
     stats: [
@@ -527,7 +527,7 @@ export const BLACKHOLE_OBJECTS = [
 // star coords: [name, RA hours, Dec degrees, magnitude]
 export const CONSTELLATIONS = [
   {
-    id: 'orion', nameTh: 'หมู่ดาวนายพราน', nameEn: 'Orion', read: 'อ่านว่า "โอ-ไร-ออน"',
+    id: 'orion', photo: 'img/const/orion.png', photoCredit: '🎨 ภาพวาดตำนาน: Stellarium · Johan Meuris (Free Art License)', nameTh: 'หมู่ดาวนายพราน', nameEn: 'Orion', read: 'อ่านว่า "โอ-ไร-ออน"',
     season: 'ฤดูหนาว (ธันวาคม – มีนาคม)', direction: 'ทิศตะวันออกถึงทิศใต้',
     stars: [
       ['เบเทลจุส (Betelgeuse)', 5.92, 7.41, 0.5],
@@ -545,7 +545,7 @@ export const CONSTELLATIONS = [
     info: 'หมู่ดาวที่โดดเด่นที่สุดของฤดูหนาว สังเกตง่ายจากดาวเรียงสามดวง (เข็มขัดนายพราน หรือดาวไถของไทย) ภายในมีเนบิวลานายพราน M42 แหล่งกำเนิดดาวฤกษ์ใหม่',
   },
   {
-    id: 'ursa-major', nameTh: 'หมู่ดาวหมีใหญ่', nameEn: 'Ursa Major', read: 'อ่านว่า "เออ-ซา-เม-เจอร์"',
+    id: 'ursa-major', photo: 'img/const/ursa-major.png', photoCredit: '🎨 ภาพวาดตำนาน: Stellarium · Johan Meuris (Free Art License)', nameTh: 'หมู่ดาวหมีใหญ่', nameEn: 'Ursa Major', read: 'อ่านว่า "เออ-ซา-เม-เจอร์"',
     season: 'ฤดูร้อน (กุมภาพันธ์ – กรกฎาคม)', direction: 'ทิศเหนือ',
     stars: [
       ['ดูเบ (Dubhe)', 11.06, 61.75, 1.8],
@@ -562,7 +562,7 @@ export const CONSTELLATIONS = [
     info: 'ดาวเจ็ดดวงสว่าง (กระบวยใหญ่ / ดาวจระเข้) ใช้หาดาวเหนือได้ โดยลากเส้นจากดาวเมรักผ่านดูเบไปอีก 5 เท่า จะพบดาวโพลาริส',
   },
   {
-    id: 'ursa-minor', nameTh: 'หมู่ดาวหมีเล็ก', nameEn: 'Ursa Minor', read: 'อ่านว่า "เออ-ซา-ไม-เนอร์"',
+    id: 'ursa-minor', photo: 'img/const/ursa-minor.png', photoCredit: '🎨 ภาพวาดตำนาน: Stellarium · Johan Meuris (Free Art License)', nameTh: 'หมู่ดาวหมีเล็ก', nameEn: 'Ursa Minor', read: 'อ่านว่า "เออ-ซา-ไม-เนอร์"',
     season: 'มองเห็นได้ทั้งปี (ซีกฟ้าเหนือ)', direction: 'ทิศเหนือ',
     stars: [
       ['โพลาริส (Polaris) — ดาวเหนือ', 2.53, 89.26, 2.0],
@@ -579,7 +579,7 @@ export const CONSTELLATIONS = [
     info: 'ปลายหางของหมีเล็กคือดาวโพลาริส (ดาวเหนือ) ซึ่งอยู่ตรงขั้วฟ้าเหนือเกือบพอดี ท้องฟ้าทั้งหมดจึงดูเหมือนหมุนรอบดาวดวงนี้',
   },
   {
-    id: 'scorpius', nameTh: 'หมู่ดาวแมงป่อง', nameEn: 'Scorpius', read: 'อ่านว่า "สกอร์-เปียส"',
+    id: 'scorpius', photo: 'img/const/scorpius.png', photoCredit: '🎨 ภาพวาดตำนาน: Stellarium · Johan Meuris (Free Art License)', nameTh: 'หมู่ดาวแมงป่อง', nameEn: 'Scorpius', read: 'อ่านว่า "สกอร์-เปียส"',
     season: 'ฤดูฝน (พฤษภาคม – กันยายน)', direction: 'ทิศใต้',
     stars: [
       ['อันทาเรส (Antares)', 16.49, -26.43, 1.0],
@@ -603,7 +603,7 @@ export const CONSTELLATIONS = [
     info: 'หมู่ดาวรูปร่างเหมือนจริงที่สุดหมู่หนึ่ง โค้งยาวเป็นหางแมงป่อง ใจกลางมีดาวอันทาเรส ดาวยักษ์แดงที่ใหญ่กว่าดวงอาทิตย์ 700 เท่า',
   },
   {
-    id: 'leo', nameTh: 'หมู่ดาวสิงโต', nameEn: 'Leo', read: 'อ่านว่า "ลี-โอ"',
+    id: 'leo', photo: 'img/const/leo.png', photoCredit: '🎨 ภาพวาดตำนาน: Stellarium · Johan Meuris (Free Art License)', nameTh: 'หมู่ดาวสิงโต', nameEn: 'Leo', read: 'อ่านว่า "ลี-โอ"',
     season: 'ฤดูร้อน (กุมภาพันธ์ – มิถุนายน)', direction: 'ทิศตะวันออกถึงเหนือศีรษะ',
     stars: [
       ['เรกูลัส (Regulus)', 10.14, 11.97, 1.4],
@@ -622,7 +622,7 @@ export const CONSTELLATIONS = [
     info: 'ส่วนหัวสิงโตเรียงเป็นรูป "เคียวเกี่ยวข้าว" หรือเครื่องหมายคำถามกลับด้าน ดาวเรกูลัสที่ใจกลางแปลว่า "ดาวราชา"',
   },
   {
-    id: 'gemini', nameTh: 'หมู่ดาวคนคู่', nameEn: 'Gemini', read: 'อ่านว่า "เจ-มิ-ไน"',
+    id: 'gemini', photo: 'img/const/gemini.png', photoCredit: '🎨 ภาพวาดตำนาน: Stellarium · Johan Meuris (Free Art License)', nameTh: 'หมู่ดาวคนคู่', nameEn: 'Gemini', read: 'อ่านว่า "เจ-มิ-ไน"',
     season: 'ฤดูหนาว (ธันวาคม – เมษายน)', direction: 'ทิศตะวันออกถึงเหนือศีรษะ',
     stars: [
       ['คาสเตอร์ (Castor)', 7.58, 31.89, 1.6],
@@ -640,7 +640,7 @@ export const CONSTELLATIONS = [
     info: 'ดาวสว่างสองดวงเคียงกันคือหัวของฝาแฝด — คาสเตอร์ (ขาว) และพอลลักซ์ (ส้ม) เป็นหนึ่งใน 12 กลุ่มดาวจักรราศี (ราศีเมถุน)',
   },
   {
-    id: 'taurus', nameTh: 'หมู่ดาววัว', nameEn: 'Taurus', read: 'อ่านว่า "ทอ-รัส"',
+    id: 'taurus', photo: 'img/const/taurus.png', photoCredit: '🎨 ภาพวาดตำนาน: Stellarium · Johan Meuris (Free Art License)', nameTh: 'หมู่ดาววัว', nameEn: 'Taurus', read: 'อ่านว่า "ทอ-รัส"',
     season: 'ฤดูหนาว (พฤศจิกายน – มีนาคม)', direction: 'ทิศตะวันออกถึงเหนือศีรษะ',
     stars: [
       ['อัลเดบารัน (Aldebaran)', 4.60, 16.51, 0.9],
@@ -658,7 +658,7 @@ export const CONSTELLATIONS = [
     info: 'หน้าวัวเป็นรูปตัว V มีดาวอัลเดบารันสีส้มเป็นตาวัว ใกล้กันคือกระจุกดาวลูกไก่ (Pleiades) ที่คนไทยรู้จักดี',
   },
   {
-    id: 'sagittarius', nameTh: 'หมู่ดาวคนยิงธนู', nameEn: 'Sagittarius', read: 'อ่านว่า "แซ-จิ-ทา-เรียส"',
+    id: 'sagittarius', photo: 'img/const/sagittarius.png', photoCredit: '🎨 ภาพวาดตำนาน: Stellarium · Johan Meuris (Free Art License)', nameTh: 'หมู่ดาวคนยิงธนู', nameEn: 'Sagittarius', read: 'อ่านว่า "แซ-จิ-ทา-เรียส"',
     season: 'ฤดูฝน (มิถุนายน – ตุลาคม)', direction: 'ทิศใต้',
     stars: [
       ['อัลนาสล์ (Alnasl)', 18.10, -30.42, 3.0],
@@ -676,7 +676,7 @@ export const CONSTELLATIONS = [
     info: 'ดาวสว่างแปดดวงเรียงเป็นรูป "กาน้ำชา" เมื่อมองไปทางหมู่ดาวนี้คือทิศทางสู่ใจกลางทางช้างเผือก จึงเห็นแถบดาวหนาแน่นที่สุด',
   },
   {
-    id: 'aries', nameTh: 'หมู่ดาวแกะ (ราศีเมษ)', nameEn: 'Aries', read: 'อ่านว่า "แอ-รีส"',
+    id: 'aries', photo: 'img/const/aries.png', photoCredit: '🎨 ภาพวาดตำนาน: Stellarium · Johan Meuris (Free Art License)', nameTh: 'หมู่ดาวแกะ (ราศีเมษ)', nameEn: 'Aries', read: 'อ่านว่า "แอ-รีส"',
     season: 'ฤดูหนาว (ตุลาคม – กุมภาพันธ์)', direction: 'ทิศตะวันออกถึงเหนือศีรษะ',
     stars: [
       ['ฮามาล (Hamal)', 2.12, 23.46, 2.0],
@@ -690,7 +690,7 @@ export const CONSTELLATIONS = [
     info: 'หมู่ดาวเล็กแต่สำคัญ — เมื่อ 2,000 ปีก่อน จุดวสันตวิษุวัต (จุดเริ่มฤดูใบไม้ผลิ) อยู่ในราศีเมษ จึงถูกนับเป็นราศีแรก คนเกิด 13 เม.ย. – 14 พ.ค. (แบบไทย) คือชาวราศีเมษ',
   },
   {
-    id: 'cancer', nameTh: 'หมู่ดาวปู (ราศีกรกฎ)', nameEn: 'Cancer', read: 'อ่านว่า "แคน-เซอร์"',
+    id: 'cancer', photo: 'img/const/cancer.png', photoCredit: '🎨 ภาพวาดตำนาน: Stellarium · Johan Meuris (Free Art License)', nameTh: 'หมู่ดาวปู (ราศีกรกฎ)', nameEn: 'Cancer', read: 'อ่านว่า "แคน-เซอร์"',
     season: 'ฤดูหนาวถึงร้อน (มกราคม – พฤษภาคม)', direction: 'ทิศตะวันออกถึงเหนือศีรษะ',
     stars: [
       ['ทาร์ฟ (Tarf)', 8.28, 9.19, 3.5],
@@ -705,7 +705,7 @@ export const CONSTELLATIONS = [
     info: 'ใจกลางหมู่ดาวมีกระจุกดาวรังผึ้ง (Beehive Cluster, M44) ที่มองเห็นเป็นฝ้าจาง ๆ ด้วยตาเปล่าในคืนมืดสนิท คนเกิด 15 ก.ค. – 16 ส.ค. (แบบไทย) คือชาวราศีกรกฎ',
   },
   {
-    id: 'virgo', nameTh: 'หมู่ดาวหญิงสาว (ราศีกันย์)', nameEn: 'Virgo', read: 'อ่านว่า "เวอร์-โก"',
+    id: 'virgo', photo: 'img/const/virgo.png', photoCredit: '🎨 ภาพวาดตำนาน: Stellarium · Johan Meuris (Free Art License)', nameTh: 'หมู่ดาวหญิงสาว (ราศีกันย์)', nameEn: 'Virgo', read: 'อ่านว่า "เวอร์-โก"',
     season: 'ฤดูร้อน (มีนาคม – กรกฎาคม)', direction: 'ทิศตะวันออกถึงทิศใต้',
     stars: [
       ['สไปกา (Spica)', 13.42, -11.16, 1.0],
@@ -722,7 +722,7 @@ export const CONSTELLATIONS = [
     info: 'หมู่ดาวใหญ่อันดับ 2 ของท้องฟ้า มีดาวสไปกาสีฟ้าขาวสว่างเด่น หาได้โดยลากเส้นโค้งจากด้ามกระบวยหมีใหญ่ผ่านดาวดวงแก้วลงมา คนเกิด 17 ก.ย. – 16 ต.ค. (แบบไทย) คือชาวราศีกันย์',
   },
   {
-    id: 'libra', nameTh: 'หมู่ดาวตาชั่ง (ราศีตุลย์)', nameEn: 'Libra', read: 'อ่านว่า "ลิ-บรา"',
+    id: 'libra', photo: 'img/const/libra.png', photoCredit: '🎨 ภาพวาดตำนาน: Stellarium · Johan Meuris (Free Art License)', nameTh: 'หมู่ดาวตาชั่ง (ราศีตุลย์)', nameEn: 'Libra', read: 'อ่านว่า "ลิ-บรา"',
     season: 'ฤดูร้อนถึงฝน (เมษายน – สิงหาคม)', direction: 'ทิศใต้',
     stars: [
       ['ซูเบเนลเจนูบี (α Lib)', 14.85, -16.04, 2.8],
@@ -736,7 +736,7 @@ export const CONSTELLATIONS = [
     info: 'ดาวซูเบเนสชามาลีว่ากันว่าเป็นดาวดวงเดียวที่ตาเปล่าเห็นเป็น "สีเขียว" จาง ๆ คนเกิด 17 ต.ค. – 15 พ.ย. (แบบไทย) คือชาวราศีตุลย์',
   },
   {
-    id: 'capricornus', nameTh: 'หมู่ดาวแพะทะเล (ราศีมังกร)', nameEn: 'Capricornus', read: 'อ่านว่า "แคป-ปริ-คอร์-นัส"',
+    id: 'capricornus', photo: 'img/const/capricornus.png', photoCredit: '🎨 ภาพวาดตำนาน: Stellarium · Johan Meuris (Free Art License)', nameTh: 'หมู่ดาวแพะทะเล (ราศีมังกร)', nameEn: 'Capricornus', read: 'อ่านว่า "แคป-ปริ-คอร์-นัส"',
     season: 'ฤดูฝน (กรกฎาคม – พฤศจิกายน)', direction: 'ทิศใต้',
     stars: [
       ['อัลเกดี (Algedi)', 20.30, -12.54, 3.6],
@@ -754,7 +754,7 @@ export const CONSTELLATIONS = [
     info: 'หมู่ดาวรูปสามเหลี่ยมโค้งคล้ายรอยยิ้ม ดาวอัลเกดีเป็นดาวคู่ที่ตาเปล่าแยกได้ คนเกิด 15 ม.ค. – 12 ก.พ. (แบบไทย) คือชาวราศีมังกร',
   },
   {
-    id: 'aquarius', nameTh: 'หมู่ดาวคนแบกหม้อน้ำ (ราศีกุมภ์)', nameEn: 'Aquarius', read: 'อ่านว่า "อะ-เคว-เรียส"',
+    id: 'aquarius', photo: 'img/const/aquarius.png', photoCredit: '🎨 ภาพวาดตำนาน: Stellarium · Johan Meuris (Free Art License)', nameTh: 'หมู่ดาวคนแบกหม้อน้ำ (ราศีกุมภ์)', nameEn: 'Aquarius', read: 'อ่านว่า "อะ-เคว-เรียส"',
     season: 'ฤดูฝนถึงหนาว (สิงหาคม – ธันวาคม)', direction: 'ทิศตะวันออกถึงทิศใต้',
     stars: [
       ['ซาดาลซูอุด (Sadalsuud)', 21.53, -5.57, 2.9],
@@ -772,7 +772,7 @@ export const CONSTELLATIONS = [
     info: 'ดาว ζ-γ-η-π เรียงเป็นรูปตัว Y เล็ก ๆ เรียกว่า "หม้อน้ำ" ฝนดาวตกอีตาอควอริดส์ (จากดาวหางฮัลเลย์!) ดูเหมือนพุ่งออกจากหมู่ดาวนี้ทุกต้นเดือนพฤษภาคม คนเกิด 13 ก.พ. – 13 มี.ค. (แบบไทย) คือชาวราศีกุมภ์',
   },
   {
-    id: 'pisces', nameTh: 'หมู่ดาวปลาคู่ (ราศีมีน)', nameEn: 'Pisces', read: 'อ่านว่า "ไพ-ซีส"',
+    id: 'pisces', photo: 'img/const/pisces.png', photoCredit: '🎨 ภาพวาดตำนาน: Stellarium · Johan Meuris (Free Art License)', nameTh: 'หมู่ดาวปลาคู่ (ราศีมีน)', nameEn: 'Pisces', read: 'อ่านว่า "ไพ-ซีส"',
     season: 'ฤดูหนาว (กันยายน – มกราคม)', direction: 'ทิศตะวันออกถึงเหนือศีรษะ',
     stars: [
       ['อัลเรสชา (Alrescha)', 2.03, 2.76, 3.8],
@@ -792,7 +792,7 @@ export const CONSTELLATIONS = [
     info: 'ปลาตัวหนึ่งว่ายขึ้นเหนือ อีกตัวว่ายไปตะวันตก มีวง "เซอร์เคล็ต" เป็นหัวปลาตะวันตก ปัจจุบันจุดวสันตวิษุวัตย้ายมาอยู่ในราศีมีนแล้ว คนเกิด 14 มี.ค. – 12 เม.ย. (แบบไทย) คือชาวราศีมีน',
   },
   {
-    id: 'cassiopeia', nameTh: 'หมู่ดาวค้างคาว', nameEn: 'Cassiopeia', read: 'อ่านว่า "แคส-สิ-โอ-เปีย"',
+    id: 'cassiopeia', photo: 'img/const/cassiopeia.png', photoCredit: '🎨 ภาพวาดตำนาน: Stellarium · Johan Meuris (Free Art License)', nameTh: 'หมู่ดาวค้างคาว', nameEn: 'Cassiopeia', read: 'อ่านว่า "แคส-สิ-โอ-เปีย"',
     season: 'ฤดูหนาว (กันยายน – กุมภาพันธ์)', direction: 'ทิศเหนือ',
     stars: [
       ['คาฟ (Caph)', 0.15, 59.15, 2.3],
@@ -807,7 +807,7 @@ export const CONSTELLATIONS = [
     info: 'ดาวห้าดวงเรียงเป็นรูปตัว W หรือ M สังเกตง่ายมากทางทิศเหนือ อยู่ตรงข้ามกับหมู่ดาวหมีใหญ่โดยมีดาวเหนืออยู่กึ่งกลาง',
   },
   {
-    id: 'crux', nameTh: 'หมู่ดาวกางเขนใต้', nameEn: 'Crux', read: 'อ่านว่า "ครักซ์"',
+    id: 'crux', photo: 'img/const/crux.png', photoCredit: '🎨 ภาพวาดตำนาน: Stellarium · Johan Meuris (Free Art License)', nameTh: 'หมู่ดาวกางเขนใต้', nameEn: 'Crux', read: 'อ่านว่า "ครักซ์"',
     season: 'ฤดูร้อน (มีนาคม – มิถุนายน)', direction: 'ทิศใต้ (ใกล้ขอบฟ้า)',
     stars: [
       ['อาครักซ์ (Acrux)', 12.44, -63.10, 0.8],
@@ -821,7 +821,7 @@ export const CONSTELLATIONS = [
     info: 'จากประเทศไทยจะเห็นกางเขนใต้อยู่ต่ำใกล้ขอบฟ้าทิศใต้ในช่วงฤดูร้อน ใช้หาทิศใต้ได้โดยลากแกนยาวของกางเขนต่อไปอีก 4.5 เท่า',
   },
   {
-    id: 'lyra', nameTh: 'หมู่ดาวพิณ', nameEn: 'Lyra', read: 'อ่านว่า "ไล-รา"',
+    id: 'lyra', photo: 'img/const/lyra.png', photoCredit: '🎨 ภาพวาดตำนาน: Stellarium · Johan Meuris (Free Art License)', nameTh: 'หมู่ดาวพิณ', nameEn: 'Lyra', read: 'อ่านว่า "ไล-รา"',
     season: 'ฤดูฝน (มิถุนายน – ตุลาคม)', direction: 'เหนือศีรษะถึงทิศเหนือ',
     stars: [
       ['เวกา (Vega)', 18.62, 38.78, 0.0],
@@ -837,7 +837,7 @@ export const CONSTELLATIONS = [
     info: 'ดาวเวกาเป็นหนึ่งใน "สามเหลี่ยมฤดูร้อน" ร่วมกับดาวอัลแทร์และเดเนบ ในนิทานจีน-ญี่ปุ่น เวกาคือ "สาวทอผ้า" ที่พบ "หนุ่มเลี้ยงวัว" (อัลแทร์) ปีละครั้งบนสะพานนกข้ามทางช้างเผือก',
   },
   {
-    id: 'cygnus', nameTh: 'หมู่ดาวหงส์', nameEn: 'Cygnus', read: 'อ่านว่า "ซิก-นัส"',
+    id: 'cygnus', photo: 'img/const/cygnus.png', photoCredit: '🎨 ภาพวาดตำนาน: Stellarium · Johan Meuris (Free Art License)', nameTh: 'หมู่ดาวหงส์', nameEn: 'Cygnus', read: 'อ่านว่า "ซิก-นัส"',
     season: 'ฤดูฝน (กรกฎาคม – พฤศจิกายน)', direction: 'เหนือศีรษะถึงทิศเหนือ',
     stars: [
       ['เดเนบ (Deneb)', 20.69, 45.28, 1.3],
@@ -856,7 +856,7 @@ export const CONSTELLATIONS = [
 // ── ดาวฤกษ์สำคัญ ───────────────────────────────────────────
 export const BRIGHT_STARS = [
   {
-    id: 'sirius', nameTh: 'ดาวซีริอุส', nameEn: 'Sirius', read: 'อ่านว่า "ซี-ริ-อุส"',
+    id: 'sirius', photo: 'img/sirius.jpg', nameTh: 'ดาวซีริอุส', nameEn: 'Sirius', read: 'อ่านว่า "ซี-ริ-อุส"',
     ra: 6.75, dec: -16.72, mag: -1.46, color: '#cfe2ff',
     stats: [
       ['ความสว่าง', 'สว่างที่สุดบนท้องฟ้ายามค่ำคืน'],
@@ -867,7 +867,7 @@ export const BRIGHT_STARS = [
     fact: 'ซีริอุสหรือ "ดาวโจร" ของไทย สว่างกว่าดวงอาทิตย์ 25 เท่า และมีดาวแคระขาวเป็นคู่หูโคจรรอบกันชื่อ "ซีริอุส บี"',
   },
   {
-    id: 'canopus', nameTh: 'ดาวคาโนปัส', nameEn: 'Canopus', read: 'อ่านว่า "คา-โน-ปัส"',
+    id: 'canopus', photo: 'img/canopus.jpg', nameTh: 'ดาวคาโนปัส', nameEn: 'Canopus', read: 'อ่านว่า "คา-โน-ปัส"',
     ra: 6.40, dec: -52.70, mag: -0.74, color: '#fff4d6',
     stats: [
       ['ความสว่าง', 'อันดับ 2 ของท้องฟ้า'],
@@ -878,7 +878,7 @@ export const BRIGHT_STARS = [
     fact: 'ยานอวกาศหลายลำใช้ดาวคาโนปัสเป็น "เข็มทิศอวกาศ" สำหรับนำทาง เพราะสว่างโดดเด่นและอยู่ห่างจากแนวระนาบสุริยะ',
   },
   {
-    id: 'arcturus', nameTh: 'ดาวอาร์กตุรัส', nameEn: 'Arcturus', read: 'อ่านว่า "อาร์ก-ตุ-รัส"',
+    id: 'arcturus', photo: 'img/arcturus.jpg', nameTh: 'ดาวอาร์กตุรัส', nameEn: 'Arcturus', read: 'อ่านว่า "อาร์ก-ตุ-รัส"',
     ra: 14.26, dec: 19.18, mag: -0.05, color: '#ffd9a8',
     stats: [
       ['ความสว่าง', 'อันดับ 4 ของท้องฟ้า'],
@@ -889,7 +889,7 @@ export const BRIGHT_STARS = [
     fact: 'คนไทยเรียกว่า "ดาวดวงแก้ว" หาได้ง่ายโดยลากเส้นโค้งต่อจากด้ามกระบวยของหมู่ดาวหมีใหญ่',
   },
   {
-    id: 'vega', nameTh: 'ดาวเวกา', nameEn: 'Vega', read: 'อ่านว่า "เว-กา"',
+    id: 'vega', photo: 'img/vega.jpg', nameTh: 'ดาวเวกา', nameEn: 'Vega', read: 'อ่านว่า "เว-กา"',
     ra: 18.62, dec: 38.78, mag: 0.03, color: '#dceaff',
     stats: [
       ['ความสว่าง', 'อันดับ 5 ของท้องฟ้า'],
@@ -900,7 +900,7 @@ export const BRIGHT_STARS = [
     fact: 'เมื่อ 12,000 ปีก่อน เวกาเคยเป็น "ดาวเหนือ" และอีกราว 13,700 ปีข้างหน้าก็จะกลับมาเป็นดาวเหนืออีกครั้ง เพราะแกนโลกส่ายเป็นวงกลม',
   },
   {
-    id: 'altair', nameTh: 'ดาวอัลแทร์', nameEn: 'Altair', read: 'อ่านว่า "อัล-แทร์"',
+    id: 'altair', photo: 'img/altair.jpg', nameTh: 'ดาวอัลแทร์', nameEn: 'Altair', read: 'อ่านว่า "อัล-แทร์"',
     ra: 19.85, dec: 8.87, mag: 0.77, color: '#eef3ff',
     stats: [
       ['ความสว่าง', 'อันดับ 12 ของท้องฟ้า'],
@@ -911,7 +911,7 @@ export const BRIGHT_STARS = [
     fact: 'อัลแทร์คือ "หนุ่มเลี้ยงวัว" ในนิทานทานาบาตะของญี่ปุ่น ที่ได้พบ "สาวทอผ้า" (ดาวเวกา) เพียงปีละครั้งในคืนวันที่ 7 เดือน 7',
   },
   {
-    id: 'rigel-star', nameTh: 'ดาวริเจล', nameEn: 'Rigel', read: 'อ่านว่า "ไร-เจล"',
+    id: 'rigel-star', photo: 'img/rigel-star.jpg', nameTh: 'ดาวริเจล', nameEn: 'Rigel', read: 'อ่านว่า "ไร-เจล"',
     ra: 5.24, dec: -8.20, mag: 0.13, color: '#cdd8ff',
     stats: [
       ['ความสว่าง', 'อันดับ 7 ของท้องฟ้า'],
@@ -922,7 +922,7 @@ export const BRIGHT_STARS = [
     fact: 'ริเจลเป็นดาวยักษ์น้ำเงินอายุสั้น มันเผาผลาญเชื้อเพลิงเร็วมากและจะจบชีวิตด้วยการระเบิดซูเปอร์โนวาในอนาคต',
   },
   {
-    id: 'betelgeuse-star', nameTh: 'ดาวเบเทลจุส', nameEn: 'Betelgeuse', read: 'อ่านว่า "เบ-เทล-จุส"',
+    id: 'betelgeuse-star', photo: 'img/betelgeuse-star.jpg', nameTh: 'ดาวเบเทลจุส', nameEn: 'Betelgeuse', read: 'อ่านว่า "เบ-เทล-จุส"',
     ra: 5.92, dec: 7.41, mag: 0.5, color: '#ffb89c',
     stats: [
       ['ความสว่าง', 'อันดับ ~10 (แปรแสง)'],
@@ -933,7 +933,7 @@ export const BRIGHT_STARS = [
     fact: 'ถ้านำเบเทลจุสมาวางแทนดวงอาทิตย์ ขอบของมันจะกลืนถึงวงโคจรดาวพฤหัสบดี! มันอาจระเบิดเป็นซูเปอร์โนวาเมื่อใดก็ได้ในแสนปีข้างหน้า',
   },
   {
-    id: 'procyon', nameTh: 'ดาวโพรซิออน', nameEn: 'Procyon', read: 'อ่านว่า "โพร-ซิ-ออน"',
+    id: 'procyon', photo: 'img/procyon.jpg', nameTh: 'ดาวโพรซิออน', nameEn: 'Procyon', read: 'อ่านว่า "โพร-ซิ-ออน"',
     ra: 7.66, dec: 5.21, mag: 0.34, color: '#fef7e0',
     stats: [
       ['ความสว่าง', 'อันดับ 8 ของท้องฟ้า'],
@@ -944,7 +944,7 @@ export const BRIGHT_STARS = [
     fact: 'โพรซิออน ซีริอุส และเบเทลจุส เรียงกันเป็น "สามเหลี่ยมฤดูหนาว" ที่มองเห็นได้ชัดเจนจากประเทศไทยในเดือนธันวาคมถึงกุมภาพันธ์',
   },
   {
-    id: 'polaris-star', nameTh: 'ดาวโพลาริส (ดาวเหนือ)', nameEn: 'Polaris', read: 'อ่านว่า "โพ-ลา-ริส"',
+    id: 'polaris-star', photo: 'img/polaris-star.jpg', nameTh: 'ดาวโพลาริส (ดาวเหนือ)', nameEn: 'Polaris', read: 'อ่านว่า "โพ-ลา-ริส"',
     ra: 2.53, dec: 89.26, mag: 1.98, color: '#fff6e8',
     stats: [
       ['ความสว่าง', 'อันดับ ~48 (ไม่ใช่ดาวสว่างที่สุด!)'],

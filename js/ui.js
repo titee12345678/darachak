@@ -142,10 +142,12 @@ export class UI {
       extra.classList.add('hidden');
     }
 
-    // ภาพถ่ายจริง (Hubble/ESO) ถ้ามี
+    // ภาพถ่าย/ภาพวาดจริงของวัตถุ
     const photoBox = $('holo-photo');
     if (o.photo) {
       $('holo-photo-img').src = o.photo;
+      photoBox.querySelector('figcaption').textContent =
+        o.photoCredit || '📷 ภาพจริง (NASA/ESA/ESO/EHT · Wikimedia Commons)';
       photoBox.classList.remove('hidden');
     } else {
       photoBox.classList.add('hidden');
