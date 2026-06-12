@@ -65,8 +65,51 @@ export class BlackHole {
     const COUNT = 24000;
     const ARMS = 4;
     const RMIN = RH * 4.0, RMAX = RH * 34;
+
+    // พื้นเรืองนุ่ม (เนบิวลา) ใต้ดวงดาว — ทำให้ทั้งกาแล็กซีดูเนียนต่อเนื่อง
+    const S = 512;
+    const cv = document.createElement('canvas');
+    cv.width = cv.height = S;
+    const cx = cv.getContext('2d');
+    const half = S / 2;
+    const bg = cx.createRadialGradient(half, half, 0, half, half, half);
+    bg.addColorStop(0, 'rgba(255, 214, 140, 0.85)');
+    bg.addColorStop(0.16, 'rgba(255, 226, 170, 0.45)');
+    bg.addColorStop(0.42, 'rgba(150, 185, 215, 0.22)');
+    bg.addColorStop(0.75, 'rgba(105, 150, 190, 0.10)');
+    bg.addColorStop(1, 'rgba(90, 130, 175, 0)');
+    cx.fillStyle = bg;
+    cx.fillRect(0, 0, S, S);
+    // หมอกฟุ้งตามแขนกังหัน (สูตรเดียวกับดวงดาว)
+    for (let i = 0; i < 240; i++) {
+      const t = Math.pow(Math.random(), 1.4);
+      const r = (0.14 + t * 0.82) * half;
+      const arm = (i % ARMS) / ARMS * Math.PI * 2;
+      const a = arm + (r / half) * 4.6 + (Math.random() - 0.5) * 0.5;
+      const x = half + Math.cos(a) * r, y = half + Math.sin(a) * r;
+      const rad = 14 + Math.random() * 34;
+      const g2 = cx.createRadialGradient(x, y, 0, x, y, rad);
+      const blue = r / half > 0.3;
+      g2.addColorStop(0, blue ? 'rgba(150, 190, 220, 0.12)' : 'rgba(255, 225, 165, 0.14)');
+      g2.addColorStop(1, 'rgba(0,0,0,0)');
+      cx.fillStyle = g2;
+      cx.fillRect(x - rad, y - rad, rad * 2, rad * 2);
+    }
+    const baseTex = new THREE.CanvasTexture(cv);
+    baseTex.colorSpace = THREE.SRGBColorSpace;
+    this.galaxyBase = new THREE.Mesh(
+      new THREE.CircleGeometry(RMAX * 1.05, 64),
+      new THREE.MeshBasicMaterial({
+        map: baseTex, transparent: true, opacity: 0.8,
+        blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide,
+      }),
+    );
+    this.galaxyBase.rotation.x = -Math.PI / 2 + 0.07;
+    this.group.add(this.galaxyBase);
+
     const pos = new Float32Array(COUNT * 3);
     const col = new Float32Array(COUNT * 3);
+    const siz = new Float32Array(COUNT);
     const cGold = new THREE.Color(0xffd98c);
     const cCream = new THREE.Color(0xfff3dc);
     const cBlue = new THREE.Color(0x8fc0e0);
@@ -90,13 +133,25 @@ export class BlackHole {
       else c.lerpColors(cBlue, cTeal, (k - 0.6) / 0.4);
       const lum = 0.45 + Math.random() * 0.6;
       col[i * 3] = c.r * lum; col[i * 3 + 1] = c.g * lum; col[i * 3 + 2] = c.b * lum;
+      siz[i] = 0.5 + Math.pow(Math.random(), 3.0) * 2.6; // ส่วนใหญ่เล็กจิ๋ว บางดวงเด่น
     }
     const geo = new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
     geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
-    this.galaxy = new THREE.Points(geo, new THREE.PointsMaterial({
-      size: 0.42, transparent: true, opacity: 0.85, vertexColors: true,
-      blending: THREE.AdditiveBlending, depthWrite: false, sizeAttenuation: true,
+    geo.setAttribute('aSize', new THREE.BufferAttribute(siz, 1));
+    // จุดกลมขอบฟุ้ง ขนาดสุ่ม — เนียนแบบภาพถ่ายดาว ไม่ใช่สี่เหลี่ยมแข็ง
+    this.galaxy = new THREE.Points(geo, new THREE.ShaderMaterial({
+      transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+      vertexColors: true,
+      vertexShader: `attribute float aSize; varying vec3 vColor;
+        void main(){ vColor = color;
+          vec4 mv = modelViewMatrix * vec4(position, 1.0);
+          gl_PointSize = aSize * (160.0 / -mv.z);
+          gl_Position = projectionMatrix * mv; }`,
+      fragmentShader: `varying vec3 vColor;
+        void main(){ float d = length(gl_PointCoord - 0.5) * 2.0;
+          float a = smoothstep(1.0, 0.15, d);
+          gl_FragColor = vec4(vColor, a * 0.95); }`,
     }));
     this.galaxy.rotation.x = 0.07; // ระนาบเดียวกับจานทอง
     this.group.add(this.galaxy);
@@ -118,7 +173,8 @@ export class BlackHole {
     geo2.setAttribute('position', new THREE.BufferAttribute(p2, 3));
     geo2.setAttribute('color', new THREE.BufferAttribute(c2, 3));
     this.sparkles = new THREE.Points(geo2, new THREE.PointsMaterial({
-      size: 1.3, transparent: true, opacity: 0.9, vertexColors: true,
+      size: 1.5, transparent: true, opacity: 0.9, vertexColors: true,
+      map: glowSprite('rgba(255,255,255,1)', 'rgba(255,255,255,0)', 64),
       blending: THREE.AdditiveBlending, depthWrite: false,
     }));
     this.sparkles.rotation.x = 0.07;
@@ -304,7 +360,8 @@ export class BlackHole {
     geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
     geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
     this.jetPoints = new THREE.Points(geo, new THREE.PointsMaterial({
-      size: 0.55, transparent: true, opacity: 0.42, vertexColors: true,
+      size: 0.8, transparent: true, opacity: 0.38, vertexColors: true,
+      map: glowSprite('rgba(255,255,255,1)', 'rgba(255,255,255,0)', 64),
       blending: THREE.AdditiveBlending, depthWrite: false,
     }));
     this.group.add(this.jetPoints);
@@ -350,7 +407,8 @@ export class BlackHole {
     const geo = new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
     this.infall = new THREE.Points(geo, new THREE.PointsMaterial({
-      color: 0xffc890, size: 0.22, transparent: true, opacity: 0.8,
+      color: 0xffc890, size: 0.3, transparent: true, opacity: 0.8,
+      map: glowSprite('rgba(255,255,255,1)', 'rgba(255,255,255,0)', 64),
       blending: THREE.AdditiveBlending, depthWrite: false,
     }));
     this.infall.rotation.x = -Math.PI / 2 + 0.07; // ระนาบเดียวกับจาน
@@ -373,9 +431,10 @@ export class BlackHole {
     this.sharedTime.value = this.elapsed;
     // วงแสงเลนส์หันหน้าเข้ากล้องตลอด (แสงโค้งรอบหลุมเห็นทุกมุมมอง)
     if (camera) this.lensHalo.quaternion.copy(camera.quaternion);
-    // กาแล็กซีหมุนช้า ๆ รอบหลุมดำ
+    // กาแล็กซีหมุนช้า ๆ รอบหลุมดำ (พื้นเรืองหมุนตาม)
     this.galaxy.rotation.y += dt * 0.012;
     this.sparkles.rotation.y += dt * 0.008;
+    this.galaxyBase.rotation.z += dt * 0.012;
     // สายเจ็ตเกลียวพลิ้ว: อนุภาคไต่เกลียวขึ้น บานออกตามความสูง
     const jp = this.jetPoints.geometry.attributes.position;
     const H = 34;
