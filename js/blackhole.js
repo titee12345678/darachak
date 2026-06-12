@@ -334,37 +334,67 @@ export class BlackHole {
     this.labels.push(l);
   }
 
-  /* ── เจ็ตสัมพัทธภาพ — สายควันเกลียวพลิ้วพุ่งขึ้น (แบบภาพ NASA) ── */
+  /* ── เจ็ตสัมพัทธภาพ — พายุควันเกลียวต่อเนื่อง (shader 3 ชั้นซ้อน) ── */
+  _jetMaterial(repeat, speed, twist, opacity) {
+    return new THREE.ShaderMaterial({
+      uniforms: {
+        uTime: this.sharedTime,
+        uNoise: { value: this.noise },
+        uRepeat: { value: repeat },
+        uSpeed: { value: speed },
+        uTwist: { value: twist },
+        uOpacity: { value: opacity },
+        uH: { value: 34 },
+      },
+      transparent: true, depthWrite: false, side: THREE.DoubleSide,
+      blending: THREE.AdditiveBlending,
+      vertexShader: /* glsl */`
+        uniform float uH;
+        varying float vH; varying float vU;
+        void main() {
+          vH = position.y / uH + 0.5;  // 0 โคน → 1 ปลาย
+          vU = uv.x;                    // มุมรอบทรงกรวย
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }`,
+      fragmentShader: /* glsl */`
+        uniform float uTime; uniform sampler2D uNoise;
+        uniform float uRepeat; uniform float uSpeed;
+        uniform float uTwist; uniform float uOpacity;
+        varying float vH; varying float vU;
+        void main() {
+          // ควันไหลขึ้น + บิดเกลียวรอบแกน = สายพายุต่อเนื่อง
+          float n = texture2D(uNoise, vec2(
+            vU * uRepeat + vH * uTwist - uTime * uSpeed * 0.22,
+            vH * 2.1 - uTime * uSpeed * 0.55)).r;
+          float n2 = texture2D(uNoise, vec2(
+            vU * uRepeat * 2.3 - uTime * uSpeed * 0.31 + 0.43,
+            vH * 4.2 - uTime * uSpeed * 0.95)).r;
+          float smoke = smoothstep(0.30, 0.85, n * 0.6 + n2 * 0.4);
+          // จางที่โคน-ปลาย และสว่างสุดช่วงล่าง
+          float fade = smoothstep(0.0, 0.10, vH) * (1.0 - smoothstep(0.5, 1.0, vH));
+          vec3 col = mix(vec3(0.88, 0.94, 1.0), vec3(0.55, 0.72, 1.0), vH);
+          float a = smoke * fade * uOpacity;
+          gl_FragColor = vec4(col * (0.75 + smoke * 0.7), a);
+        }`,
+    });
+  }
+
   _buildJets() {
     const H = 34;
-    const COUNT = 700;
-    this.jetParts = [];
-    const pos = new Float32Array(COUNT * 3);
-    const col = new Float32Array(COUNT * 3);
-    for (let i = 0; i < COUNT; i++) {
-      const h = Math.pow(Math.random(), 0.8) * H;
-      this.jetParts.push({
-        h,
-        a: Math.random() * Math.PI * 2,
-        r0: 0.25 + Math.random() * 0.45,
-        sp: 0.6 + Math.random() * 1.0,
-        wob: Math.random() * Math.PI * 2,
-      });
-      // ฟ้าขาวสว่างที่โคน จางลงตามความสูง
-      const f = 1 - h / H;
-      col[i * 3] = 0.65 + f * 0.35;
-      col[i * 3 + 1] = 0.78 + f * 0.22;
-      col[i * 3 + 2] = 1.0;
-    }
-    const geo = new THREE.BufferGeometry();
-    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-    geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
-    this.jetPoints = new THREE.Points(geo, new THREE.PointsMaterial({
-      size: 0.8, transparent: true, opacity: 0.38, vertexColors: true,
-      map: glowSprite('rgba(255,255,255,1)', 'rgba(255,255,255,0)', 64),
-      blending: THREE.AdditiveBlending, depthWrite: false,
-    }));
-    this.group.add(this.jetPoints);
+    // 3 ชั้นซ้อน: แกนในสว่างแน่น → ชั้นกลาง → หมอกนอกฟุ้งกว้าง
+    const layers = [
+      [0.4, 1.6, 2.0, 1.6, 5.0, 0.85],
+      [0.7, 2.6, 3.0, 1.0, 3.2, 0.5],
+      [1.1, 3.8, 4.0, 0.65, 2.2, 0.26],
+    ];
+    layers.forEach(([rTop, rBot, rep, spd, tw, op]) => {
+      const jet = new THREE.Mesh(
+        new THREE.CylinderGeometry(rBot, rTop, H, 48, 24, true), // ปลายบานกว้าง
+        this._jetMaterial(rep, spd, tw, op),
+      );
+      jet.position.y = H / 2 + RH * 0.55;
+      this.group.add(jet);
+    });
 
     // แสงขาวจ้าที่โคนเจ็ต (จุดที่อนุภาคถูกเหวี่ยงหนี)
     const base = new THREE.Sprite(new THREE.SpriteMaterial({
@@ -435,21 +465,7 @@ export class BlackHole {
     this.galaxy.rotation.y += dt * 0.012;
     this.sparkles.rotation.y += dt * 0.008;
     this.galaxyBase.rotation.z += dt * 0.012;
-    // สายเจ็ตเกลียวพลิ้ว: อนุภาคไต่เกลียวขึ้น บานออกตามความสูง
-    const jp = this.jetPoints.geometry.attributes.position;
-    const H = 34;
-    this.jetParts.forEach((m, i) => {
-      m.h += dt * m.sp * 3.2;
-      m.a += dt * m.sp * 1.8;
-      if (m.h > H) { m.h = 0; m.a = Math.random() * Math.PI * 2; }
-      const spread = m.r0 + (m.h / H) * 2.6;            // บานออกด้านบน
-      const sway = Math.sin(m.h * 0.32 + this.elapsed * 0.7 + m.wob) * (m.h / H) * 1.4;
-      jp.setXYZ(i,
-        Math.cos(m.a) * spread + sway,
-        RH * 0.7 + m.h,
-        Math.sin(m.a) * spread + sway * 0.5);
-    });
-    jp.needsUpdate = true;
+    // เจ็ตพายุควันขับเคลื่อนด้วย shader (uTime ร่วมกับจาน) — ไม่มีงาน CPU ต่อเฟรม
     // อนุภาคหมุนเร็วขึ้นเมื่อใกล้หลุม (เคปเลอร์) แล้วหายวับที่ขอบฟ้า
     const p = this.infall.geometry.attributes.position;
     this.parts.forEach((m, i) => {
