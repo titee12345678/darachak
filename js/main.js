@@ -391,6 +391,14 @@ function setupControls() {
   document.querySelectorAll('.mode-tab').forEach((b) =>
     b.addEventListener('click', () => setMode(b.dataset.mode)));
 
+  // โลโก้ = ปุ่มกลับภาพรวมระบบสุริยะ
+  document.querySelector('.brand').addEventListener('click', () => {
+    if (demos.active) exitDemo();
+    if (tour.active) tour.stop();
+    if (mode !== 'solar') setMode('solar');
+    else goOverview();
+  });
+
   // ระดับการเรียนรู้
   document.querySelectorAll('.lvl').forEach((b) =>
     b.addEventListener('click', () => {

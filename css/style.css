@@ -140,7 +140,8 @@ button { font-family: var(--font-display); cursor: pointer; }
 }
 #topbar > * { pointer-events: auto; }
 
-.brand { display: flex; align-items: center; gap: 12px; }
+.brand { display: flex; align-items: center; gap: 12px; cursor: pointer; }
+.brand:hover .brand-th { text-shadow: 0 0 14px rgba(111, 227, 255, .7); }
 .brand-mark {
   width: 34px; height: 34px; border-radius: 50%;
   background:
