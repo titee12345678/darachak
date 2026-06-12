@@ -53,10 +53,82 @@ export class BlackHole {
 
     this._buildHorizon();
     this._buildDisk();
+    this._buildGalaxy();
     this._buildPhotonRing();
     this._buildJets();
     this._buildInfall();
     this._syncLabels();
+  }
+
+  /* ── กาแล็กซีดวงดาวล้อมหลุมดำ (ตามภาพ: ทองใจกลาง → ฟ้าแขนกังหัน) ── */
+  _buildGalaxy() {
+    const COUNT = 24000;
+    const ARMS = 4;
+    const RMIN = RH * 4.0, RMAX = RH * 34;
+    const pos = new Float32Array(COUNT * 3);
+    const col = new Float32Array(COUNT * 3);
+    const cGold = new THREE.Color(0xffd98c);
+    const cCream = new THREE.Color(0xfff3dc);
+    const cBlue = new THREE.Color(0x8fc0e0);
+    const cTeal = new THREE.Color(0x6fa8c8);
+    const c = new THREE.Color();
+    for (let i = 0; i < COUNT; i++) {
+      const t = Math.pow(Math.random(), 1.6); // หนาแน่นใจกลาง
+      const r = RMIN + t * (RMAX - RMIN);
+      const arm = (i % ARMS) / ARMS * Math.PI * 2;
+      const spiral = arm + (r / RMAX) * 4.6;            // แขนกังหันลอการิทึม
+      const spread = 0.28 + (r / RMAX) * 0.55;           // แขนฟุ้งขึ้นด้านนอก
+      const ra = spiral + (Math.random() - 0.5) * spread * 2.2;
+      const rr = r * (1 + (Math.random() - 0.5) * 0.16);
+      pos[i * 3] = Math.cos(ra) * rr;
+      pos[i * 3 + 1] = (Math.random() - 0.5) * (0.8 + (r / RMAX) * 3.2); // จานบางใจกลาง ฟุ้งขอบ
+      pos[i * 3 + 2] = Math.sin(ra) * rr;
+      // สี: ทอง (ใจกลาง) → ครีม → ฟ้า → ฟ้าเขียวหม่น (ขอบ)
+      const k = r / RMAX;
+      if (k < 0.22) c.lerpColors(cGold, cCream, k / 0.22);
+      else if (k < 0.6) c.lerpColors(cCream, cBlue, (k - 0.22) / 0.38);
+      else c.lerpColors(cBlue, cTeal, (k - 0.6) / 0.4);
+      const lum = 0.45 + Math.random() * 0.6;
+      col[i * 3] = c.r * lum; col[i * 3 + 1] = c.g * lum; col[i * 3 + 2] = c.b * lum;
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+    this.galaxy = new THREE.Points(geo, new THREE.PointsMaterial({
+      size: 0.42, transparent: true, opacity: 0.85, vertexColors: true,
+      blending: THREE.AdditiveBlending, depthWrite: false, sizeAttenuation: true,
+    }));
+    this.galaxy.rotation.x = 0.07; // ระนาบเดียวกับจานทอง
+    this.group.add(this.galaxy);
+
+    // ดาวสว่างสีส้ม-ขาวประปรายแบบในภาพ
+    const N2 = 320;
+    const p2 = new Float32Array(N2 * 3);
+    const c2 = new Float32Array(N2 * 3);
+    for (let i = 0; i < N2; i++) {
+      const r = RH * 6 + Math.random() * RH * 26;
+      const a = Math.random() * Math.PI * 2;
+      p2[i * 3] = Math.cos(a) * r;
+      p2[i * 3 + 1] = (Math.random() - 0.5) * 4;
+      p2[i * 3 + 2] = Math.sin(a) * r;
+      const orange = Math.random() < 0.45;
+      c2[i * 3] = 1; c2[i * 3 + 1] = orange ? 0.65 : 0.95; c2[i * 3 + 2] = orange ? 0.3 : 0.9;
+    }
+    const geo2 = new THREE.BufferGeometry();
+    geo2.setAttribute('position', new THREE.BufferAttribute(p2, 3));
+    geo2.setAttribute('color', new THREE.BufferAttribute(c2, 3));
+    this.sparkles = new THREE.Points(geo2, new THREE.PointsMaterial({
+      size: 1.3, transparent: true, opacity: 0.9, vertexColors: true,
+      blending: THREE.AdditiveBlending, depthWrite: false,
+    }));
+    this.sparkles.rotation.x = 0.07;
+    this.group.add(this.sparkles);
+
+    // ป้ายเชื่อมความรู้: หลุมดำยิ่งยวดอยู่ใจกลางกาแล็กซีแทบทุกแห่ง
+    const l = makeLabel('กาแล็กซีรอบหลุมดำ', '(คลิกดูเรื่องทางช้างเผือก)', () => this.onPick('milkyway'));
+    l.position.set(-RH * 18, 3, RH * 10);
+    this.group.add(l);
+    this.labels.push(l);
   }
 
   /* ── เงาดำสนิทของขอบฟ้าเหตุการณ์ ───────────────────────── */
@@ -110,13 +182,13 @@ export class BlackHole {
           float n2 = texture2D(uNoise, vec2(sw * 2.6 + 0.37 - spin * 0.9, t * 4.5)).r;
           float n3 = texture2D(uNoise, vec2(sw * 6.0 - spin * 1.4, t * 9.0)).r;
           float streak = n * 0.45 + n2 * 0.35 + n3 * 0.2;
-          // โทนสีแบบภาพ NASA: ขาวครีมใจกลาง → ครีม → น้ำตาลอ่อน → น้ำตาลเข้ม
-          vec3 white = vec3(1.0, 0.98, 0.92);
-          vec3 cream = vec3(0.95, 0.88, 0.74);
-          vec3 tan   = vec3(0.70, 0.56, 0.42);
-          vec3 brown = vec3(0.30, 0.20, 0.13);
-          vec3 col = mix(white, cream, smoothstep(0.0, 0.22, t));
-          col = mix(col, tan,   smoothstep(0.22, 0.55, t));
+          // โทนทองอำพันแบบใจกลางกาแล็กซี: ขาวทอง → ทอง → อำพัน → น้ำตาลทอง
+          vec3 white = vec3(1.0, 0.97, 0.88);
+          vec3 gold  = vec3(1.0, 0.85, 0.52);
+          vec3 amber = vec3(0.88, 0.58, 0.26);
+          vec3 brown = vec3(0.35, 0.22, 0.10);
+          vec3 col = mix(white, gold, smoothstep(0.0, 0.22, t));
+          col = mix(col, amber, smoothstep(0.22, 0.55, t));
           col = mix(col, brown, smoothstep(0.55, 1.0, t));
           // แถบฝุ่นมืดแทรกเป็นวง ๆ
           col *= 0.55 + streak * 0.75;
@@ -140,7 +212,7 @@ export class BlackHole {
   _buildDisk() {
     this.sharedTime = { value: 0 };
     this.noise = noiseTex(7);
-    const inner = RH * 1.12, outer = RH * 11.5; // จานใหญ่แผ่กว้าง เงาดำดูเล็กกลางจาน
+    const inner = RH * 1.12, outer = RH * 5.0; // วงทองเรืองรอบเงาดำ — กาแล็กซีอนุภาครับช่วงต่อ
     const disk = new THREE.Mesh(
       new THREE.RingGeometry(inner, outer, 220, 36),
       this._diskMaterial(inner, outer, 0, 1, 1.0),
@@ -301,6 +373,9 @@ export class BlackHole {
     this.sharedTime.value = this.elapsed;
     // วงแสงเลนส์หันหน้าเข้ากล้องตลอด (แสงโค้งรอบหลุมเห็นทุกมุมมอง)
     if (camera) this.lensHalo.quaternion.copy(camera.quaternion);
+    // กาแล็กซีหมุนช้า ๆ รอบหลุมดำ
+    this.galaxy.rotation.y += dt * 0.012;
+    this.sparkles.rotation.y += dt * 0.008;
     // สายเจ็ตเกลียวพลิ้ว: อนุภาคไต่เกลียวขึ้น บานออกตามความสูง
     const jp = this.jetPoints.geometry.attributes.position;
     const H = 34;

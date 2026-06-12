@@ -200,15 +200,15 @@ function applyBHCamera() {
   controls.autoRotate = true;       // หมุนชมรอบหลุมดำช้า ๆ
   controls.autoRotateSpeed = 0.4;
   controls.minDistance = 9;
-  controls.maxDistance = 300;
+  controls.maxDistance = 420;
   controls.enablePan = false;
   controls.enableZoom = true;
   controls.rotateSpeed = 0.8;
   camera.fov = 55;
   camera.updateProjectionMatrix();
-  // มุมเฉียดระนาบจานแบบภาพศิลป์ NASA — จานแผ่เต็มจอ เงาดำกลางภาพ
-  camera.position.set(4, 9, 58);
-  controls.target.set(0, 1.5, 0);
+  // มุมมองเห็นทั้งกาแล็กซีล้อมหลุมดำ — ซูมเข้าไปดูใจกลางได้
+  camera.position.set(10, 55, 130);
+  controls.target.set(0, 0, 0);
 }
 
 /* ── บินกล้องไปหาดาว (โหมดระบบสุริยะ) ────────────────────────
