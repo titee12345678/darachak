@@ -88,7 +88,6 @@ export class BlackHole {
         uGain: { value: gain },
       },
       transparent: true, depthWrite: false, side: THREE.DoubleSide,
-      blending: THREE.AdditiveBlending,
       vertexShader: /* glsl */`
         varying vec2 vP;
         void main() {
@@ -104,62 +103,66 @@ export class BlackHole {
           float r = length(vP);
           float t = clamp((r - uInner) / (uOuter - uInner), 0.0, 1.0);
           float ang = atan(vP.y, vP.x);
-          // เคปเลอร์: วงในหมุนเร็วกว่า — ลายก๊าซบิดเกลียว
-          float spin = uTime * (0.55 - t * 0.38);
-          float n = texture2D(uNoise, vec2((ang / 6.28318) * 3.0 - spin - t * 2.2, t * 1.8)).r;
-          float n2 = texture2D(uNoise, vec2((ang / 6.28318) * 7.0 - spin * 1.6 + 0.35, t * 3.5)).r;
-          float streak = n * 0.6 + n2 * 0.4;
-          // อุณหภูมิ: ขอบในขาวร้อนจัด → วงนอกส้มแดงคล้ำ
-          vec3 white = vec3(1.0, 0.99, 0.96);
-          vec3 hot  = vec3(1.0, 0.88, 0.62);
-          vec3 mid  = vec3(1.0, 0.55, 0.14);
-          vec3 cool = vec3(0.45, 0.09, 0.02);
-          vec3 col = mix(white, hot, smoothstep(0.0, 0.18, t));
-          col = mix(col, mid, smoothstep(0.18, 0.5, t));
-          col = mix(col, cool, smoothstep(0.5, 1.0, t));
-          // Doppler beaming: ฝั่งพุ่งเข้าหาผู้ชมสว่าง+ฟ้าขึ้น อีกฝั่งหรี่+แดง
+          // เกลียวลอการิทึม + เคปเลอร์ (วงในหมุนเร็ว) = ลายนมเกลียวในกาแฟ
+          float spin = uTime * (0.30 - t * 0.20);
+          float sw = (ang / 6.28318) * 2.0 - log(r / uInner) * 2.6;
+          float n  = texture2D(uNoise, vec2(sw - spin * 0.5, t * 1.6)).r;
+          float n2 = texture2D(uNoise, vec2(sw * 2.6 + 0.37 - spin * 0.9, t * 4.5)).r;
+          float n3 = texture2D(uNoise, vec2(sw * 6.0 - spin * 1.4, t * 9.0)).r;
+          float streak = n * 0.45 + n2 * 0.35 + n3 * 0.2;
+          // โทนสีแบบภาพ NASA: ขาวครีมใจกลาง → ครีม → น้ำตาลอ่อน → น้ำตาลเข้ม
+          vec3 white = vec3(1.0, 0.98, 0.92);
+          vec3 cream = vec3(0.95, 0.88, 0.74);
+          vec3 tan   = vec3(0.70, 0.56, 0.42);
+          vec3 brown = vec3(0.30, 0.20, 0.13);
+          vec3 col = mix(white, cream, smoothstep(0.0, 0.22, t));
+          col = mix(col, tan,   smoothstep(0.22, 0.55, t));
+          col = mix(col, brown, smoothstep(0.55, 1.0, t));
+          // แถบฝุ่นมืดแทรกเป็นวง ๆ
+          col *= 0.55 + streak * 0.75;
+          // Doppler เบา ๆ พอให้ฝั่งหนึ่งสว่างกว่า
           float d = dot(normalize(vP), uDop);
-          float dop = 1.0 + 0.8 * d;
-          col *= dop;
-          col.b *= (1.0 + 0.3 * d);
-          // ขอบในเรืองขาวจัด (แสงสุดท้ายก่อนตกหลุม)
-          float rim = smoothstep(0.12, 0.0, t);
-          col += vec3(1.0, 0.97, 0.9) * rim * 1.6;
-          float bright = pow(1.0 - t, 1.5) * (0.45 + streak * 0.95) * uGain;
-          float edge = smoothstep(0.0, 0.04, t) * (1.0 - smoothstep(0.78, 1.0, t));
-          gl_FragColor = vec4(col * bright, bright * edge);
+          col *= 1.0 + 0.3 * d;
+          // ใจกลางเรืองขาวจ้า (แสงสุดท้ายก่อนตกหลุม)
+          float rim = smoothstep(0.10, 0.0, t);
+          col += vec3(1.0, 0.99, 0.95) * rim * 1.3;
+          // จานทึบแบบควันนม ไม่ใช่ไฟเรือง — ใช้ normal blending
+          float fadeIn  = smoothstep(0.0, 0.025, t);
+          float fadeOut = 1.0 - smoothstep(0.72, 1.0, t);
+          float alpha = fadeIn * fadeOut * (0.5 + streak * 0.55) * uGain;
+          float glow = (rim * 0.8 + (1.0 - t) * 0.25);
+          gl_FragColor = vec4(col * (0.85 + glow), clamp(alpha + rim, 0.0, 1.0));
         }`,
     });
   }
 
-  /* ── จานพอกพูนมวลแนวนอน ────────────────────────────────── */
+  /* ── จานพอกพูนมวลมหึมาแบบภาพศิลป์ NASA ──────────────────── */
   _buildDisk() {
     this.sharedTime = { value: 0 };
     this.noise = noiseTex(7);
-    const inner = RH * 1.18, outer = RH * 4.2;
+    const inner = RH * 1.12, outer = RH * 11.5; // จานใหญ่แผ่กว้าง เงาดำดูเล็กกลางจาน
     const disk = new THREE.Mesh(
-      new THREE.RingGeometry(inner, outer, 192, 24),
-      this._diskMaterial(inner, outer, 0, 1, 1.25),
+      new THREE.RingGeometry(inner, outer, 220, 36),
+      this._diskMaterial(inner, outer, 0, 1, 1.0),
     );
-    disk.rotation.x = -Math.PI / 2 + 0.18;
+    disk.rotation.x = -Math.PI / 2 + 0.07; // เกือบแบนราบ มองเฉียดระนาบ
     disk.userData.info = bhInfo('bh-disk');
     this.group.add(disk);
     this.pickables.push(disk);
     this.disk = disk;
 
-    // วงแสงเลนส์ความโน้มถ่วง — แสงจาก "ด้านหลัง" ของจานถูกดัดโค้ง
-    // ขึ้นมาเหนือ-ใต้เงาดำ (ภาพแบบ Gargantua/M87) หันเข้ากล้องเสมอ
-    const hi = RH * 1.04, ho = RH * 2.5;
+    // แสงเลนส์จาง ๆ รัดรอบเงาดำ (หันเข้ากล้องเสมอ)
+    const hi = RH * 1.02, ho = RH * 1.7;
     this.lensHalo = new THREE.Mesh(
-      new THREE.RingGeometry(hi, ho, 128, 16),
-      this._diskMaterial(hi, ho, -1, 0, 0.9),
+      new THREE.RingGeometry(hi, ho, 96, 8),
+      this._diskMaterial(hi, ho, -1, 0, 0.55),
     );
-    this.lensHalo.userData.info = bhInfo('bh-disk');
+    this.lensHalo.userData.info = bhInfo('bh-photon');
     this.group.add(this.lensHalo);
     this.pickables.push(this.lensHalo);
 
     const l = makeLabel('จานพอกพูนมวล', '(Accretion Disk)', () => this.onPick('bh-disk'));
-    l.position.set(outer * 0.82, 1.6, 0);
+    l.position.set(outer * 0.6, 1.8, 0);
     this.group.add(l);
     this.labels.push(l);
   }
@@ -203,39 +206,59 @@ export class BlackHole {
     this.labels.push(l);
   }
 
-  /* ── เจ็ตสัมพัทธภาพคู่ขั้วบน-ล่าง ──────────────────────── */
+  /* ── เจ็ตสัมพัทธภาพ — สายควันเกลียวพลิ้วพุ่งขึ้น (แบบภาพ NASA) ── */
   _buildJets() {
-    const H = 30;
-    const c = document.createElement('canvas');
-    c.width = 4; c.height = 256;
-    const ctx = c.getContext('2d');
-    const g = ctx.createLinearGradient(0, 256, 0, 0);
-    g.addColorStop(0, 'rgba(170,210,255,0.85)');
-    g.addColorStop(0.35, 'rgba(140,190,255,0.4)');
-    g.addColorStop(1, 'rgba(120,170,255,0)');
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, 4, 256);
-    const tex = new THREE.CanvasTexture(c);
+    const H = 34;
+    const COUNT = 700;
+    this.jetParts = [];
+    const pos = new Float32Array(COUNT * 3);
+    const col = new Float32Array(COUNT * 3);
+    for (let i = 0; i < COUNT; i++) {
+      const h = Math.pow(Math.random(), 0.8) * H;
+      this.jetParts.push({
+        h,
+        a: Math.random() * Math.PI * 2,
+        r0: 0.25 + Math.random() * 0.45,
+        sp: 0.6 + Math.random() * 1.0,
+        wob: Math.random() * Math.PI * 2,
+      });
+      // ฟ้าขาวสว่างที่โคน จางลงตามความสูง
+      const f = 1 - h / H;
+      col[i * 3] = 0.65 + f * 0.35;
+      col[i * 3 + 1] = 0.78 + f * 0.22;
+      col[i * 3 + 2] = 1.0;
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+    this.jetPoints = new THREE.Points(geo, new THREE.PointsMaterial({
+      size: 0.55, transparent: true, opacity: 0.42, vertexColors: true,
+      blending: THREE.AdditiveBlending, depthWrite: false,
+    }));
+    this.group.add(this.jetPoints);
 
-    this.jets = [];
-    [1, -1].forEach((dir) => {
-      const jet = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.35, 1.0, H, 24, 1, true),
-        new THREE.MeshBasicMaterial({
-          map: tex, transparent: true, side: THREE.DoubleSide,
-          blending: THREE.AdditiveBlending, depthWrite: false,
-        }),
-      );
-      jet.position.y = dir * (H / 2 + RH * 0.5);
-      if (dir < 0) jet.rotation.x = Math.PI;
-      jet.userData.info = bhInfo('bh-jet');
-      this.group.add(jet);
-      this.pickables.push(jet);
-      this.jets.push(jet);
-    });
+    // แสงขาวจ้าที่โคนเจ็ต (จุดที่อนุภาคถูกเหวี่ยงหนี)
+    const base = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: glowSprite('rgba(235,245,255,0.95)', 'rgba(150,190,255,0)'),
+      transparent: true, opacity: 0.9,
+      blending: THREE.AdditiveBlending, depthWrite: false,
+    }));
+    base.scale.setScalar(RH * 1.6);
+    base.position.y = RH * 0.9;
+    this.group.add(base);
+
+    // แท่งใสสำหรับคลิกเลือกเจ็ต
+    const pick = new THREE.Mesh(
+      new THREE.CylinderGeometry(2.2, 2.2, H, 8, 1, true),
+      new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false }),
+    );
+    pick.position.y = H / 2 + RH * 0.5;
+    pick.userData.info = bhInfo('bh-jet');
+    this.group.add(pick);
+    this.pickables.push(pick);
 
     const l = makeLabel('เจ็ตสัมพัทธภาพ', '(Relativistic Jet)', () => this.onPick('bh-jet'));
-    l.position.set(0, H * 0.75, 0);
+    l.position.set(0, H * 0.8, 0);
     this.group.add(l);
     this.labels.push(l);
   }
@@ -258,7 +281,7 @@ export class BlackHole {
       color: 0xffc890, size: 0.22, transparent: true, opacity: 0.8,
       blending: THREE.AdditiveBlending, depthWrite: false,
     }));
-    this.infall.rotation.x = -Math.PI / 2 + 0.22; // ระนาบเดียวกับจาน
+    this.infall.rotation.x = -Math.PI / 2 + 0.07; // ระนาบเดียวกับจาน
     this.group.add(this.infall);
   }
 
@@ -278,17 +301,28 @@ export class BlackHole {
     this.sharedTime.value = this.elapsed;
     // วงแสงเลนส์หันหน้าเข้ากล้องตลอด (แสงโค้งรอบหลุมเห็นทุกมุมมอง)
     if (camera) this.lensHalo.quaternion.copy(camera.quaternion);
-    // เจ็ตเต้นระยิบ
-    this.jets.forEach((j, i) => {
-      j.material.opacity = 0.45 + 0.2 * Math.sin(this.elapsed * 2.2 + i * 2);
+    // สายเจ็ตเกลียวพลิ้ว: อนุภาคไต่เกลียวขึ้น บานออกตามความสูง
+    const jp = this.jetPoints.geometry.attributes.position;
+    const H = 34;
+    this.jetParts.forEach((m, i) => {
+      m.h += dt * m.sp * 3.2;
+      m.a += dt * m.sp * 1.8;
+      if (m.h > H) { m.h = 0; m.a = Math.random() * Math.PI * 2; }
+      const spread = m.r0 + (m.h / H) * 2.6;            // บานออกด้านบน
+      const sway = Math.sin(m.h * 0.32 + this.elapsed * 0.7 + m.wob) * (m.h / H) * 1.4;
+      jp.setXYZ(i,
+        Math.cos(m.a) * spread + sway,
+        RH * 0.7 + m.h,
+        Math.sin(m.a) * spread + sway * 0.5);
     });
+    jp.needsUpdate = true;
     // อนุภาคหมุนเร็วขึ้นเมื่อใกล้หลุม (เคปเลอร์) แล้วหายวับที่ขอบฟ้า
     const p = this.infall.geometry.attributes.position;
     this.parts.forEach((m, i) => {
       m.a += dt * m.s * (RH * 2.2 / m.r);
       m.r -= dt * m.s * 0.35;
       if (m.r < RH * 1.02) { // ตกถึงขอบฟ้า → เกิดใหม่ขอบนอก
-        m.r = RH * 3.6 + Math.random() * RH;
+        m.r = RH * 3.2 + Math.random() * RH * 1.5;
         m.a = Math.random() * Math.PI * 2;
       }
       p.setXYZ(i, Math.cos(m.a) * m.r, Math.sin(m.a) * m.r, (Math.random() - 0.5) * 0.1);
