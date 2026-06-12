@@ -75,65 +75,88 @@ export class BlackHole {
     this.labels.push(l);
   }
 
-  /* ── จานพอกพูนมวล — shader หมุน + Doppler beaming ──────── */
-  _buildDisk() {
-    const inner = RH * 1.25, outer = RH * 3.6;
-    this.diskUniforms = {
-      uTime: { value: 0 },
-      uNoise: { value: noiseTex(7) },
-      uInner: { value: inner },
-      uOuter: { value: outer },
-    };
-    const mat = new THREE.ShaderMaterial({
-      uniforms: this.diskUniforms,
+  /* shader จานก๊าซ — ใช้ร่วมกันระหว่างจานแนวนอนกับวงแสงเลนส์
+     uDopDir กำหนดทิศ Doppler beaming ของแต่ละชิ้น */
+  _diskMaterial(inner, outer, dopX, dopY, gain) {
+    return new THREE.ShaderMaterial({
+      uniforms: {
+        uTime: this.sharedTime,
+        uNoise: { value: this.noise },
+        uInner: { value: inner },
+        uOuter: { value: outer },
+        uDop: { value: new THREE.Vector2(dopX, dopY) },
+        uGain: { value: gain },
+      },
       transparent: true, depthWrite: false, side: THREE.DoubleSide,
       blending: THREE.AdditiveBlending,
       vertexShader: /* glsl */`
         varying vec2 vP;
         void main() {
-          vP = position.xy; // ring สร้างในระนาบ XY แล้วค่อยหมุนทั้ง mesh
+          vP = position.xy;
           gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
         }`,
       fragmentShader: /* glsl */`
         uniform float uTime; uniform sampler2D uNoise;
         uniform float uInner; uniform float uOuter;
+        uniform vec2 uDop; uniform float uGain;
         varying vec2 vP;
         void main() {
           float r = length(vP);
           float t = clamp((r - uInner) / (uOuter - uInner), 0.0, 1.0);
           float ang = atan(vP.y, vP.x);
-          // ก๊าซวงในหมุนเร็วกว่าวงนอก (เคปเลอร์) — ลายเส้นบิดเป็นเกลียว
+          // เคปเลอร์: วงในหมุนเร็วกว่า — ลายก๊าซบิดเกลียว
           float spin = uTime * (0.55 - t * 0.38);
-          float n = texture2D(uNoise, vec2(
-            (ang / 6.28318) * 3.0 - spin - t * 2.2,
-            t * 1.8)).r;
-          float n2 = texture2D(uNoise, vec2(
-            (ang / 6.28318) * 7.0 - spin * 1.6 + 0.35,
-            t * 3.5)).r;
-          float streak = n * 0.65 + n2 * 0.35;
-          // อุณหภูมิ: วงในขาวเหลืองจัด → วงนอกส้มแดงคล้ำ
-          vec3 hot  = vec3(1.0, 0.97, 0.88);
-          vec3 mid  = vec3(1.0, 0.62, 0.18);
-          vec3 cool = vec3(0.55, 0.12, 0.03);
-          vec3 col = mix(hot, mid, smoothstep(0.0, 0.45, t));
-          col = mix(col, cool, smoothstep(0.45, 1.0, t));
-          // Doppler beaming: ฝั่งก๊าซพุ่งเข้าหาผู้ชมสว่าง+ฟ้าขึ้น อีกฝั่งหรี่+แดงลง
-          float dop = 1.0 + 0.85 * sin(ang);
+          float n = texture2D(uNoise, vec2((ang / 6.28318) * 3.0 - spin - t * 2.2, t * 1.8)).r;
+          float n2 = texture2D(uNoise, vec2((ang / 6.28318) * 7.0 - spin * 1.6 + 0.35, t * 3.5)).r;
+          float streak = n * 0.6 + n2 * 0.4;
+          // อุณหภูมิ: ขอบในขาวร้อนจัด → วงนอกส้มแดงคล้ำ
+          vec3 white = vec3(1.0, 0.99, 0.96);
+          vec3 hot  = vec3(1.0, 0.88, 0.62);
+          vec3 mid  = vec3(1.0, 0.55, 0.14);
+          vec3 cool = vec3(0.45, 0.09, 0.02);
+          vec3 col = mix(white, hot, smoothstep(0.0, 0.18, t));
+          col = mix(col, mid, smoothstep(0.18, 0.5, t));
+          col = mix(col, cool, smoothstep(0.5, 1.0, t));
+          // Doppler beaming: ฝั่งพุ่งเข้าหาผู้ชมสว่าง+ฟ้าขึ้น อีกฝั่งหรี่+แดง
+          float d = dot(normalize(vP), uDop);
+          float dop = 1.0 + 0.8 * d;
           col *= dop;
-          col.b *= (1.0 + 0.25 * sin(ang));
-          // ความสว่างรวม: วงในจ้ากว่า + ลายเส้นก๊าซ
-          float bright = (1.35 - t) * (0.35 + streak * 0.9);
-          // ขอบในและขอบนอกจางนุ่ม
-          float edge = smoothstep(0.0, 0.06, t) * (1.0 - smoothstep(0.82, 1.0, t));
+          col.b *= (1.0 + 0.3 * d);
+          // ขอบในเรืองขาวจัด (แสงสุดท้ายก่อนตกหลุม)
+          float rim = smoothstep(0.12, 0.0, t);
+          col += vec3(1.0, 0.97, 0.9) * rim * 1.6;
+          float bright = pow(1.0 - t, 1.5) * (0.45 + streak * 0.95) * uGain;
+          float edge = smoothstep(0.0, 0.04, t) * (1.0 - smoothstep(0.78, 1.0, t));
           gl_FragColor = vec4(col * bright, bright * edge);
         }`,
     });
-    const disk = new THREE.Mesh(new THREE.RingGeometry(inner, outer, 192, 24), mat);
-    disk.rotation.x = -Math.PI / 2 + 0.22; // เอียงเล็กน้อยให้เห็นมิติ
+  }
+
+  /* ── จานพอกพูนมวลแนวนอน ────────────────────────────────── */
+  _buildDisk() {
+    this.sharedTime = { value: 0 };
+    this.noise = noiseTex(7);
+    const inner = RH * 1.18, outer = RH * 4.2;
+    const disk = new THREE.Mesh(
+      new THREE.RingGeometry(inner, outer, 192, 24),
+      this._diskMaterial(inner, outer, 0, 1, 1.25),
+    );
+    disk.rotation.x = -Math.PI / 2 + 0.18;
     disk.userData.info = bhInfo('bh-disk');
     this.group.add(disk);
     this.pickables.push(disk);
     this.disk = disk;
+
+    // วงแสงเลนส์ความโน้มถ่วง — แสงจาก "ด้านหลัง" ของจานถูกดัดโค้ง
+    // ขึ้นมาเหนือ-ใต้เงาดำ (ภาพแบบ Gargantua/M87) หันเข้ากล้องเสมอ
+    const hi = RH * 1.04, ho = RH * 2.5;
+    this.lensHalo = new THREE.Mesh(
+      new THREE.RingGeometry(hi, ho, 128, 16),
+      this._diskMaterial(hi, ho, -1, 0, 0.9),
+    );
+    this.lensHalo.userData.info = bhInfo('bh-disk');
+    this.group.add(this.lensHalo);
+    this.pickables.push(this.lensHalo);
 
     const l = makeLabel('จานพอกพูนมวล', '(Accretion Disk)', () => this.onPick('bh-disk'));
     l.position.set(outer * 0.82, 1.6, 0);
@@ -148,19 +171,20 @@ export class BlackHole {
     const c = document.createElement('canvas');
     c.width = c.height = S;
     const ctx = c.getContext('2d');
-    const g = ctx.createRadialGradient(S / 2, S / 2, S * 0.30, S / 2, S / 2, S * 0.5);
-    g.addColorStop(0.0, 'rgba(255,200,120,0)');
-    g.addColorStop(0.28, 'rgba(255,210,140,0.95)');
-    g.addColorStop(0.45, 'rgba(255,150,60,0.45)');
-    g.addColorStop(1.0, 'rgba(255,110,30,0)');
+    // วงโฟตอนรัดแน่นรอบเงาดำ — เส้นบางคมแบบภาพ EHT
+    const g = ctx.createRadialGradient(S / 2, S / 2, S * 0.40, S / 2, S / 2, S * 0.5);
+    g.addColorStop(0.0, 'rgba(255,220,160,0)');
+    g.addColorStop(0.35, 'rgba(255,235,190,1.0)');
+    g.addColorStop(0.55, 'rgba(255,170,80,0.5)');
+    g.addColorStop(1.0, 'rgba(255,120,40,0)');
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, S, S);
     const tex = new THREE.CanvasTexture(c);
     const halo = new THREE.Sprite(new THREE.SpriteMaterial({
-      map: tex, transparent: true, opacity: 0.95,
+      map: tex, transparent: true, opacity: 1,
       blending: THREE.AdditiveBlending, depthWrite: false,
     }));
-    halo.scale.setScalar(RH * 3.4);
+    halo.scale.setScalar(RH * 2.35);
     this.group.add(halo);
     this.halo = halo;
 
@@ -196,7 +220,7 @@ export class BlackHole {
     this.jets = [];
     [1, -1].forEach((dir) => {
       const jet = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.5, 1.5, H, 24, 1, true),
+        new THREE.CylinderGeometry(0.35, 1.0, H, 24, 1, true),
         new THREE.MeshBasicMaterial({
           map: tex, transparent: true, side: THREE.DoubleSide,
           blending: THREE.AdditiveBlending, depthWrite: false,
@@ -248,13 +272,15 @@ export class BlackHole {
     this._syncLabels();
   }
 
-  update(dt) {
+  update(dt, camera = null) {
     if (!this.group.visible) return;
     this.elapsed += dt;
-    this.diskUniforms.uTime.value = this.elapsed;
+    this.sharedTime.value = this.elapsed;
+    // วงแสงเลนส์หันหน้าเข้ากล้องตลอด (แสงโค้งรอบหลุมเห็นทุกมุมมอง)
+    if (camera) this.lensHalo.quaternion.copy(camera.quaternion);
     // เจ็ตเต้นระยิบ
     this.jets.forEach((j, i) => {
-      j.material.opacity = 0.75 + 0.25 * Math.sin(this.elapsed * 2.2 + i * 2);
+      j.material.opacity = 0.45 + 0.2 * Math.sin(this.elapsed * 2.2 + i * 2);
     });
     // อนุภาคหมุนเร็วขึ้นเมื่อใกล้หลุม (เคปเลอร์) แล้วหายวับที่ขอบฟ้า
     const p = this.infall.geometry.attributes.position;

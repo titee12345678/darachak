@@ -632,7 +632,7 @@ function animate() {
       updateLookTween(dt);
       updateCompass();
     }
-    if (mode === 'bh') blackhole.update(paused ? 0 : dt);
+    if (mode === 'bh') blackhole.update(paused ? 0 : dt, camera);
     controls.update();
     renderer.render(scene, camera);
     labelRenderer.render(scene, camera);
