@@ -507,21 +507,6 @@ export class Planetarium {
       this.labels.push(o);
     });
 
-    // เส้นกริดมุมเงยจาง ๆ
-    [30, 60].forEach((alt) => {
-      const r2 = Math.cos(THREE.MathUtils.degToRad(alt)) * R;
-      const y2 = Math.sin(THREE.MathUtils.degToRad(alt)) * R;
-      const pts = [];
-      for (let i = 0; i <= 96; i++) {
-        const t = (i / 96) * Math.PI * 2;
-        pts.push(new THREE.Vector3(Math.cos(t) * r2, y2, Math.sin(t) * r2));
-      }
-      const l = new THREE.Line(
-        new THREE.BufferGeometry().setFromPoints(pts),
-        new THREE.LineBasicMaterial({ color: 0x2a5a78, transparent: true, opacity: 0.16 }),
-      );
-      this.group.add(l);
-    });
   }
 
   /* ── บรรยากาศ: เงาต้นไม้รอบขอบฟ้า + โดมท้องฟ้ากลางวัน ──── */
