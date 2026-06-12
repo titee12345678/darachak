@@ -3,7 +3,7 @@
    ═══════════════════════════════════════════════════════════ */
 import {
   SUN, PLANETS, DWARF_PLANETS, COMET, EARTH_MOON, ASTEROID_BELT_INFO,
-  MAJOR_MOONS, CONSTELLATIONS, BRIGHT_STARS, DSOS,
+  MAJOR_MOONS, CONSTELLATIONS, BRIGHT_STARS, DSOS, BLACKHOLE_OBJECTS,
 } from './data.js';
 import { daysSinceJ2000, moonPhase } from './ephemeris.js';
 import { ARTICLES } from './articles.js';
@@ -24,6 +24,7 @@ const GLYPH_POS = { earth: '74% 42%', jupiter: '64% 55%', mars: '20% 50%' };
 export const REGISTRY = new Map();
 [SUN, ...PLANETS, ...DWARF_PLANETS, COMET, EARTH_MOON, ASTEROID_BELT_INFO, ...MAJOR_MOONS].forEach((o) => REGISTRY.set(o.id, { ...o, world: 'solar' }));
 CONSTELLATIONS.forEach((c) => REGISTRY.set(c.id, { ...c, world: 'sky', kind: 'constellation' }));
+BLACKHOLE_OBJECTS.forEach((o) => REGISTRY.set(o.id, o));
 BRIGHT_STARS.forEach((s) => REGISTRY.set(s.id, { ...s, world: 'sky', kind: 'star' }));
 DSOS.forEach((d) => REGISTRY.set(d.id, { ...d, world: 'sky', kind: 'dso' }));
 
@@ -206,7 +207,8 @@ export class UI {
   /* ── ลิ้นชักรายชื่อวัตถุ ───────────────────────────────── */
   fillDrawer(mode, onSelect) {
     const list = $('drawer-list');
-    $('drawer-title').textContent = mode === 'solar' ? 'วัตถุในระบบสุริยะ' : 'วัตถุบนท้องฟ้า';
+    $('drawer-title').textContent = mode === 'solar' ? 'วัตถุในระบบสุริยะ'
+      : mode === 'bh' ? 'ส่วนประกอบหลุมดำ' : 'วัตถุบนท้องฟ้า';
     list.innerHTML = '';
     const add = (o, sub) => {
       const li = document.createElement('li');
@@ -233,6 +235,11 @@ export class UI {
       add(REGISTRY.get('belt'));
       DWARF_PLANETS.forEach((p) => add(p, 'แคระ'));
       add(REGISTRY.get('comet'));
+    } else if (mode === 'bh') {
+      group('ส่วนประกอบ');
+      ['bh-core', 'bh-disk', 'bh-photon', 'bh-jet'].forEach((id) => add(REGISTRY.get(id)));
+      group('ความรู้และตัวอย่างจริง');
+      ['bh-types', 'bh-sgra', 'bh-m87'].forEach((id) => add(REGISTRY.get(id)));
     } else {
       group('ดวงอาทิตย์ ดวงจันทร์ ดาวเคราะห์ (ตำแหน่งจริงคืนนี้)');
       ['sun', 'moon', 'mercury', 'venus', 'mars', 'jupiter', 'saturn']
