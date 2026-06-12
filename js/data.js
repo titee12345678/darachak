@@ -7,7 +7,7 @@
 // ── ระบบสุริยะ ─────────────────────────────────────────────
 // dist/radius are scene units (compressed museum scale), period in Earth-days
 export const SUN = {
-  id: 'sun', photo: 'img/sun.jpg', type: 'star',
+  id: 'sun', photo: 'img/sun.jpg', photoCredit: '📷 ภาพถ่ายจริงจากยาน SDO ย่านอัลตราไวโอเลต (NASA)', type: 'star',
   nameTh: 'ดวงอาทิตย์', nameEn: 'The Sun', read: 'อ่านว่า "เดอะ-ซัน"',
   radius: 6.2,
   color: '#ffb454',
