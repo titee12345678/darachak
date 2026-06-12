@@ -255,7 +255,7 @@ function updateHomeFly(dt) {
   if (k >= 1) {
     flyHome = null;
     controls.enabled = true;
-    controls.autoRotate = true;     // ถึงภาพรวมแล้ว → หมุนชมต่อ
+    controls.autoRotate = !paused;  // ถึงภาพรวมแล้ว → หมุนชมต่อ (ถ้าไม่ได้กดหยุด)
     controls.autoRotateSpeed = 0.5;
   }
 }
@@ -302,7 +302,7 @@ function updateFocus(dt) {
     if (k >= 1) {
       fly = null;
       controls.enabled = true;
-      controls.autoRotate = autoOrbit;  // ถึงดาวแล้ว → หมุนชมรอบดาวอัตโนมัติ
+      controls.autoRotate = autoOrbit && !paused; // ถึงดาวแล้ว → หมุนชมรอบดาว (ถ้าไม่ได้กดหยุด)
       controls.autoRotateSpeed = 0.9;
     }
     return;
@@ -391,6 +391,13 @@ function setupControls() {
     paused = !paused;
     $('pause-btn').textContent = paused ? '▶' : '❚❚';
     $('pause-btn').classList.toggle('on', paused);
+    // หยุด = หยุดทั้งเวลาและการหมุนกล้องอัตโนมัติ
+    if (paused) {
+      controls.autoRotate = false;
+    } else {
+      controls.autoRotate = focusId ? autoOrbit : true;
+      controls.autoRotateSpeed = focusId ? 0.9 : 0.5;
+    }
   });
   $('orbit-toggle').addEventListener('click', (e) => {
     const on = !e.currentTarget.classList.contains('on');
